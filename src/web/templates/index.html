@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon, plane %}
+{% block title %}{{ app_name }} · İstikbal göklerdedir{% endblock %}
+{% block body_class %}home is-blueprint{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.css"
+      integrity="sha384-KJ5PVEqRubvyTkEk9eSz4NphibkpEJll7FJEsAmuLvb6BiwWLVXVOVoQsI5ReK8E" crossorigin="anonymous">
+<link rel="stylesheet" href="{{ url_for('web.static', filename='css/home.css') }}">
+<link rel="preload" as="image" href="{{ url_for('web.static', filename='img/sky/sunset.webp') }}" type="image/webp" media="(min-width: 901px)">
+<link rel="preload" as="image" href="{{ url_for('web.static', filename='img/sky/sunset-1280.webp') }}" type="image/webp" media="(max-width: 900px)">
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js" defer
+        integrity="sha384-tKsJDT6PlUI0pSBt9/sBKJluKgA19/a6mBrDsZaXotLB4ZYfMGM6xt6/WgGpYhTm" crossorigin="anonymous"></script>
+<script type="importmap" nonce="{{ csp_nonce }}">
+  {"imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  },
+  "integrity": {
+    "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js": "sha384-IDC7sAMAIMB/TZ6dgKKPPAKZ2bXXXP8+FBMBC8cU319eBhKITx+PaalhfDkDNH28"
+  }}
+</script>
+{% endblock %}
+
+{% block layout %}
+{# Arka plan iki katmandır: altta gerçek gökyüzü, üstte teknik çizim kâğıdı. Açılışta uçak
+   kendini çizer, ardından bir tarama çizgisi kâğıdı silerek gerçek sahneyi açar (home.js). #}
+<div class="sky" aria-hidden="true">
+  <div class="sky__photo sky__photo--sunset" id="sky-sunset"></div>
+  <div class="sky__photo sky__photo--above" id="sky-above"></div>
+  <div class="sky__shade" id="sky-shade"></div>
+</div>
+<div class="bp" id="bp" aria-hidden="true">
+  <div class="bp__grid"></div>
+  <div class="bp__ruler bp__ruler--top"></div>
+  <div class="bp__ruler bp__ruler--left"></div>
+  <span class="bp__mark bp__mark--tl"></span><span class="bp__mark bp__mark--tr"></span>
+  <span class="bp__mark bp__mark--bl"></span><span class="bp__mark bp__mark--br"></span>
+</div>
+<div class="wipe" id="wipe" aria-hidden="true"></div>
+<canvas class="stage" id="stage" aria-hidden="true"></canvas>
+<div class="sunglow" id="sunglow" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="topnav">
+  <a class="brand" href="{{ url_for('web.index') }}">
+    {{ plane(22, "var(--red-bright)") }}
+    <span class="brand__name">{{ app_name }}</span>
+  </a>
+</header>
+
+<nav class="rail" aria-label="Bölümler">
+  <span class="rail__track" aria-hidden="true"><span class="rail__fill" id="rail-fill"></span></span>
+  <button type="button" class="rail__stop" data-stop="kalkis"><span>Kalkış</span></button>
+  <button type="button" class="rail__stop" data-stop="kokpit"><span>Kokpit</span></button>
+  <button type="button" class="rail__stop" data-stop="kabin"><span>Kabin</span></button>
+  <button type="button" class="rail__stop" data-stop="irtifa"><span>İrtifa</span></button>
+</nav>
+
+{# Antet: teknik çizim evresinde görünür, kâğıtla birlikte silinir #}
+<aside class="titleblock" aria-hidden="true">
+  <div class="tb__row tb__row--head"><span>{{ app_name }}</span><span>B787-8</span></div>
+  <div class="tb__row"><span class="tb__k">ÇİZİM</span><span class="tb__v">Genel görünüş</span></div>
+  <div class="tb__row"><span class="tb__k">ÖLÇEK</span><span class="tb__v">1:250</span><span class="tb__k">BİRİM</span><span class="tb__v">m</span></div>
+  <div class="tb__row"><span class="tb__k">DURUM</span><span class="tb__v" id="tb-state">Çiziliyor</span></div>
+</aside>
+
+{# Ölçü çizgileri (uzunluk, kanat açıklığı) #}
+<svg class="dims" aria-hidden="true" focusable="false">
+  <g class="dim" id="dim-0"><path class="dim__ext" id="dim-0-ext"/><path class="dim__line" id="dim-0-line"/>
+    <g class="dim__label" id="dim-0-label"><rect x="-38" y="-12" width="76" height="24" rx="12"/><text id="dim-0-text" text-anchor="middle" dy="4"></text></g></g>
+  <g class="dim" id="dim-1"><path class="dim__ext" id="dim-1-ext"/><path class="dim__line" id="dim-1-line"/>
+    <g class="dim__label" id="dim-1-label"><rect x="-38" y="-12" width="76" height="24" rx="12"/><text id="dim-1-text" text-anchor="middle" dy="4"></text></g></g>
+</svg>
+
+{# Uçaktaki noktadan karta uzanan çizgiler #}
+<svg class="leaders" id="leaders" aria-hidden="true" focusable="false">
+  <path class="leader" id="leader-0"/><circle class="leader__dot" id="dot-0" r="5"/>
+  <path class="leader" id="leader-1"/><circle class="leader__dot" id="dot-1" r="5"/>
+  <path class="leader" id="leader-2"/><circle class="leader__dot" id="dot-2" r="5"/>
+</svg>
+<div class="idframe" id="idframe" aria-hidden="true">
+  <span class="idframe__c idframe__c--tl"></span><span class="idframe__c idframe__c--tr"></span>
+  <span class="idframe__c idframe__c--bl"></span><span class="idframe__c idframe__c--br"></span>
+  <span class="idframe__scan"></span>
+</div>
+
+<main id="main" class="story">
+  <section class="chapter chapter--hero" data-in="0" data-out="0.085">
+    <blockquote class="quote">
+      <h1 class="display" data-split>İstikbal <em>göklerdedir.</em></h1>
+      <footer class="quote__by"><span class="quote__rule" aria-hidden="true"></span>Mustafa Kemal Atatürk</footer>
+    </blockquote>
+    <p class="lead reveal">Gökyüzündeki uçakları canlı izleyin, kalkışların gecikme riskini öngörün, bir fotoğraftan uçağın tipini tanıyın.</p>
+  </section>
+
+  <section class="chapter chapter--specs" data-in="0.12" data-out="0.24">
+    <p class="kicker reveal">Boeing 787-8 Dreamliner</p>
+    <h2 class="headline" data-split>Kompozit gövde, <em>esneyen kanatlar.</em></h2>
+    <dl class="specs reveal">
+      <div><dt>Uzunluk</dt><dd data-count="56.7" data-dec="1" data-suffix=" m" data-dim="0">56,7 m</dd></div>
+      <div><dt>Kanat açıklığı</dt><dd data-count="60.1" data-dec="1" data-suffix=" m" data-dim="1">60,1 m</dd></div>
+      <div><dt>Menzil</dt><dd data-count="13530" data-dec="0" data-suffix=" km">13.530 km</dd></div>
+      <div><dt>Seyir hızı</dt><dd data-count="0.85" data-dec="2" data-prefix="Mach ">Mach 0,85</dd></div>
+    </dl>
+  </section>
+
+  {# Kokpit camından çıkan çizginin ucundaki sekme #}
+  <section class="callout feature" id="callout-0" data-in="0.335" data-out="0.455" aria-labelledby="c0-title">
+    <h2 class="callout__title" id="c0-title">Canlı harita</h2>
+    <div class="callout__radar">
+      <canvas id="radar-canvas" width="168" height="168" aria-hidden="true"></canvas>
+      <p class="callout__stat"><strong id="radar-count">-</strong> uçak şu anda havada<span id="radar-near"></span></p>
+    </div>
+    <p class="callout__text">Askeri ve kargo uçakları dahil, dünyadaki tüm uçakların anlık konumu ve rotası.</p>
+    <a class="cta" href="{{ url_for('web.harita') }}">Radara gir {{ icon("arrow", 18) }}</a>
+  </section>
+
+  {# Yolcu penceresinden çıkan çizginin ucundaki sekme #}
+  <section class="callout feature" id="callout-1" data-in="0.585" data-out="0.70" aria-labelledby="c1-title">
+    <h2 class="callout__title" id="c1-title">Gecikme tahmini</h2>
+    <div class="board" aria-label="Desteklenen kalkış havalimanları">
+      {% for a in airports[:5] %}
+      <div class="board__row"><span class="flap" data-flap="{{ a.iata }}">{{ a.iata }}</span><span class="flap" data-flap="{{ a.name | upper }}">{{ a.name | upper }}</span></div>
+      {% endfor %}
+    </div>
+    <p class="callout__text">{{ n_airports }} büyük ABD havalimanından kalkışlar için 15 dakikayı aşan gecikme olasılığı.{% if metrics.delay_roc_auc is not none %} <span class="callout__meta">LightGBM, ROC-AUC {{ metrics.delay_roc_auc | tr_num(3) }}</span>{% endif %}</p>
+    <a class="cta" href="{{ url_for('web.gecikme') }}">Riski hesapla {{ icon("arrow", 18) }}</a>
+  </section>
+
+  {# Tanıma çerçevesinden çıkan çizginin ucundaki sekme #}
+  <section class="callout feature" id="callout-2" data-in="0.82" data-out="0.955" aria-labelledby="c2-title">
+    <h2 class="callout__title" id="c2-title">Uçak tanıma</h2>
+    <p class="callout__guess"><span>Boeing 787</span><span class="callout__bar"><span id="guess-bar"></span></span></p>
+    <p class="callout__text">Bir fotoğraf yükleyin; model {% if n_families %}{{ n_families }} {% endif %}uçak ailesi arasından en olası üç tahmini versin.{% if metrics.vision_top3 is not none %} <span class="callout__meta">EfficientNet-B0, top-3 {{ metrics.vision_top3 | tr_pct(1) }}</span>{% endif %}</p>
+    <a class="cta" href="{{ url_for('web.tanima') }}">Fotoğraf yükle {{ icon("arrow", 18) }}</a>
+  </section>
+
+  <section class="chapter chapter--end" data-in="0.975" data-out="2">
+    <h2 class="headline" data-split>İyi <em>uçuşlar.</em></h2>
+    <p class="sys-status" id="sys-status" data-state="loading" role="status" aria-live="polite">
+      <span class="sys-status__dot" aria-hidden="true"></span>
+      <span id="sys-status-text">Sistem durumu kontrol ediliyor…</span>
+    </p>
+    <p class="credits">Fotoğraflar: Mila Young, Joshua Hoehne (Unsplash). Uçak verisi: adsb.lol (ODbL)<span id="model-credit"></span></p>
+  </section>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('web.static', filename='js/home.js') }}"></script>
+<script nonce="{{ csp_nonce }}">
+  // 3B sahne yüklenemezse (WebGL yok, CDN'e ulaşılamıyor) içerik düz sayfa olarak gösterilir
+  setTimeout(function () { if (!document.body.classList.contains("has-3d")) document.body.classList.add("no-3d"); }, 9000);
+</script>
+{% endblock %}

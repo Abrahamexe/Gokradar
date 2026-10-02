@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} — {{ app_name }}{% endblock %}
+{% block content %}
+<header class="page-header placeholder">
+  <span class="eyebrow">Hata {{ code }}</span>
+  <h1 class="page-title">{{ "Sayfa bulunamadı" if code == 404 else "Bir sorun oluştu" }}</h1>
+  <p class="lead">{{ message }}</p>
+  <p><a class="btn btn--outline" href="{{ url_for('web.index') }}">Ana sayfaya dön</a></p>
+</header>
+{% endblock %}

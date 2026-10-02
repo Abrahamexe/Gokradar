@@ -1,0 +1,39 @@
+{% from "_icons.html" import icon %}<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ app_name }}{% endblock %}</title>
+<meta name="theme-color" content="#0D1014">
+<link rel="icon" type="image/svg+xml" href="{{ url_for('web.static', filename='img/favicon.svg') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="{{ url_for('web.static', filename='css/app.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}app{% endblock %}">
+<a class="skip-link" href="#main">İçeriğe geç</a>
+{% block layout %}
+<div class="shell">
+  {% block nav %}
+  <nav class="sidenav" aria-label="Ana menü">
+    {# Kısa etiketler yalnızca geniş menüde (radar sayfası) görünür; erişilebilir ad aria-label'dır #}
+    {% set short = {"web.index": app_name, "web.harita": "Radar", "web.gecikme": "Gecikme", "web.tanima": "Tanıma"} %}
+    {% for endpoint, path, label, ico in nav_pages %}
+    <a href="{{ url_for(endpoint) }}" aria-label="{{ label }}" title="{{ label }}"
+       class="sidenav__link{% if ico == 'logo' %} sidenav__link--logo{% endif %}"
+       {% if active == endpoint and ico != 'logo' %}aria-current="page"{% endif %}>{{ icon(ico) }}<span class="sidenav__text" aria-hidden="true">{{ short.get(endpoint, label) }}</span></a>
+    {% endfor %}
+    {% block nav_extra %}{% endblock %}
+  </nav>
+  {% endblock %}
+  <main id="main" class="page{% block main_class %} page--padded{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}
+<script src="{{ url_for('web.static', filename='js/common.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

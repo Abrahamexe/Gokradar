@@ -1,0 +1,59 @@
+# ── Gizli bilgiler (ASLA commit edilmez) ──────────────────────────
+.env
+.env.*
+!.env.example
+credentials.json
+credentials.*.json
+!credentials.example.json
+*.pem
+*.key
+*.p12
+secrets/
+
+# ── Sanal ortam ve Python ─────────────────────────────────────────
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# ── Testler ve geliştirici yardımcıları (kullanıcılar için gereksiz) ─
+tests/
+pytest.ini
+.pytest_cache/
+.coverage
+htmlcov/
+requirements-dev.txt
+
+# ── Proje planı / tasarım taslakları (iç belgeler) ────────────────
+PLAN.md
+design/
+notebooks/
+
+# ── Veri (klasör yapısı .gitkeep ile korunur) ─────────────────────
+data/raw/**
+data/processed/**
+data/uploads/**
+!data/**/
+!data/**/.gitkeep
+
+# ── Eğitilmiş modeller ve raporları (kullanıcı kendi modelini eğitir) ─
+models/**
+!models/**/
+!models/**/.gitkeep
+
+# ── Loglar ve geçici dosyalar ─────────────────────────────────────
+logs/
+*.log
+*.tmp
+
+# ── Node (tools/build_edges.mjs için) ─────────────────────────────
+node_modules/
+
+# ── IDE / OS / araçlar ────────────────────────────────────────────
+.vscode/
+.idea/
+.claude/
+Thumbs.db
+.DS_Store

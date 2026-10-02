@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Gecikme tahmini — {{ app_name }}{% endblock %}
+
+{# Sol menünün altı: modelin test başarısı #}
+{% block nav_extra %}
+{% if metrics.delay_roc_auc is not none %}
+<div class="sidenav__live" aria-hidden="true">
+  <span class="sidenav__live-state">LightGBM</span>
+  <strong class="sidenav__live-count">{{ metrics.delay_roc_auc | tr_num(3) }}</strong>
+  <span class="sidenav__live-unit">ROC-AUC</span>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <h1 class="page-title">Gecikme <em>tahmini</em></h1>
+  <p class="lead">Uçuş bilgilerini girin. Model, kalkış havalimanının güncel hava durumunu da hesaba katarak 15 dakikayı aşan gecikme olasılığını verir.</p>
+</header>
+
+<div class="split">
+  <form class="card split__side delay-form" id="delay-form" novalidate>
+    <label class="field">Kalkış havalimanı
+      <select id="origin" name="origin" required disabled>
+        <option value="">Havalimanları yükleniyor…</option>
+      </select>
+      <span class="field__error" id="origin-error" hidden></span>
+    </label>
+    <div class="form-grid">
+      <label class="field">Varış
+        <input id="dest" name="dest" type="text" inputmode="text" autocomplete="off" maxlength="3"
+               placeholder="BOS" required pattern="[A-Za-z]{3}" aria-describedby="dest-error">
+        <span class="field__error" id="dest-error" hidden></span>
+      </label>
+      <label class="field">Havayolu
+        <input id="airline" name="airline" type="text" autocomplete="off" maxlength="3"
+               placeholder="DL" required pattern="[A-Za-z0-9]{2,3}" aria-describedby="airline-error">
+        <span class="field__error" id="airline-error" hidden></span>
+      </label>
+      <label class="field">Tarih
+        <input id="date" name="date" type="date" required aria-describedby="date-error">
+        <span class="field__error" id="date-error" hidden></span>
+      </label>
+      <label class="field">Planlanan kalkış (yerel)
+        <input id="dep_time" name="dep_time" type="time" required aria-describedby="dep_time-error">
+        <span class="field__error" id="dep_time-error" hidden></span>
+      </label>
+    </div>
+    <button type="submit" class="btn btn--primary btn--block" id="submit">Tahmini hesapla</button>
+    <p class="status" id="form-status" role="status" aria-live="polite" hidden></p>
+    <p class="small">Kalkış yalnızca desteklenen havalimanlarından seçilebilir. Varış havalimanı serbesttir; eğitim verisinde az görülen varışlar “diğer” grubunda değerlendirilir.</p>
+  </form>
+
+  <section class="card split__main result" aria-label="Tahmin sonucu" aria-live="polite" aria-busy="false" id="result">
+    <div class="result__head">
+      <span class="result__route mono" id="r-route">Henüz tahmin yapılmadı</span>
+      <span class="chip" id="r-chip" hidden></span>
+    </div>
+
+    <div class="result__top">
+      <div class="gauge">
+        <svg width="360" height="200" viewBox="0 0 360 200" aria-hidden="true" focusable="false">
+          <path d="M40 180 A140 140 0 0 1 320 180" fill="none" stroke="#1F2630" stroke-width="12" stroke-linecap="round"/>
+          <path class="gauge__arc" id="r-arc" d="M40 180 A140 140 0 0 1 320 180" fill="none" stroke="#E8743B"
+                stroke-width="12" stroke-linecap="round" stroke-dasharray="0 440" style="display: none"/>
+        </svg>
+        <div class="gauge__value">
+          <span class="gauge__pct" id="r-pct">—</span>
+          <span class="gauge__label">gecikme olasılığı</span>
+        </div>
+      </div>
+      <div class="profile">
+        <span class="profile__title">Aynı rota, günün farklı saatleri</span>
+        <div class="profile__bars" id="r-profile">
+          <p class="small">Tahmin yapıldığında aynı uçuşun gün içindeki diğer saatler için olasılıkları burada gösterilir.</p>
+        </div>
+        <p class="small" id="r-profile-note" hidden></p>
+      </div>
+    </div>
+
+    <div class="weather">
+      <span class="weather__title" id="r-wx-title">Kalkış havalimanının güncel hava durumu (METAR)</span>
+      <div class="tiles-4">
+        <div class="tile"><span class="tile__label">Rüzgâr</span><span class="tile__value" id="r-wind">—</span></div>
+        <div class="tile"><span class="tile__label">Görüş</span><span class="tile__value" id="r-vis">—</span></div>
+        <div class="tile"><span class="tile__label">Bulut tavanı</span><span class="tile__value" id="r-ceil">—</span></div>
+        <div class="tile"><span class="tile__label">Yağış</span><span class="tile__value" id="r-precip">—</span></div>
+      </div>
+      <code class="metar-raw" id="r-raw" hidden></code>
+    </div>
+
+    <ul class="notes" id="r-notes" hidden></ul>
+
+    <div class="notice result__notice">
+      Bu bir tahmindir, garanti değildir. Model ABD BTS verisiyle{% if train_months %} ({{ train_months }}){% endif %} eğitildi
+      ve yalnızca desteklenen havalimanlarında geçerlidir. Hava durumu, uçuş tarihinden bağımsız olarak kalkış havalimanının
+      güncel METAR'ından alınır; tahmin yakın saatlerdeki uçuşlar için en anlamlıdır.
+      LightGBM{% if metrics.delay_roc_auc is not none %} · test ROC-AUC {{ metrics.delay_roc_auc | tr_num(3) }}{% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('web.static', filename='js/delay.js') }}"></script>
+{% endblock %}

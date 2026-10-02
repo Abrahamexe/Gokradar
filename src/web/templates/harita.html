@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon, plane %}
+{% block title %}Canlı harita — {{ app_name }}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+<link rel="stylesheet" href="{{ url_for('web.static', filename='css/map.css') }}">
+{% endblock %}
+{% block main_class %} page--map{% endblock %}
+{% block body_class %}app app--map{% endblock %}
+{# Sol menünün altı: radardaki canlı uçak sayısı (map.js günceller) #}
+{% block nav_extra %}
+<div class="sidenav__live" id="nav-live" data-state="loading" aria-hidden="true">
+  <span class="sidenav__live-state"><i class="live-dot"></i>Canlı</span>
+  <strong class="sidenav__live-count" id="nav-live-count">-</strong>
+  <span class="sidenav__live-unit">uçak</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="map-area">
+  <div id="map" class="map" aria-label="Canlı uçak haritası"></div>
+  {# Açılış: veri gelene kadar teknik çizim kâğıdı; veri gelince amber silme çizgisiyle açılır #}
+  <div class="map-boot" id="map-boot" aria-hidden="true">
+    <div class="map-boot__paper">
+      <div class="map-boot__grid"></div>
+      <p class="map-boot__text">Radar verisi alınıyor</p>
+    </div>
+    <div class="map-boot__bar"><span class="map-boot__wipe"></span></div>
+  </div>
+
+  <div class="map-top">
+    <label class="map-search">
+      {{ icon("search", 18) }}
+      <span class="sr-only">Uçak ara</span>
+      <input id="search" type="search" placeholder="Çağrı kodu, tescil, tip (B738, C17…) veya ICAO24 ara" autocomplete="off" spellcheck="false">
+    </label>
+    <div class="map-live" id="live" data-state="loading" role="status" aria-live="polite">
+      <span class="live-dot" aria-hidden="true"></span>
+      <span id="live-text">Uçaklar yükleniyor…</span>
+    </div>
+    <button type="button" class="map-refresh" id="refresh" aria-label="Radarı yenile" title="Radarı yenile">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+    </button>
+  </div>
+
+  <div class="legend" id="legend" role="group" aria-label="Uçak türleri — göstermek/gizlemek için tıklayın"></div>
+  <div class="map-tip" id="map-tip" hidden></div>
+  <div class="map-msg" id="map-msg" role="alert" hidden></div>
+
+  <div class="map-zoom">
+    <button type="button" id="zoom-in" aria-label="Yakınlaştır">+</button>
+    <button type="button" id="zoom-out" aria-label="Uzaklaştır">−</button>
+  </div>
+
+  <div class="map-info" id="map-info">Harita: {{ tiles.name }} · Veri: adsb.lol</div>
+</div>
+
+<aside class="map-panel" aria-label="Uçak bilgileri">
+  <section class="sel" id="sel" aria-live="polite">
+    <div class="sel__empty" id="sel-empty">
+      <span class="sel__empty-icon" aria-hidden="true">{{ icon("radar", 28) }}</span>
+      <h2 class="sel__empty-title">Bir uçak seçin</h2>
+      <p>Haritada bir uçağa ya da aşağıdaki listeden bir satıra tıklayın; nereden kalkıp nereye gittiği haritada çizilir.</p>
+    </div>
+
+    <div class="sel__body" id="sel-body" hidden>
+      <header class="sel__head">
+        <span class="kind-chip" id="sel-kind"></span>
+        <span class="chip" id="sel-age" hidden></span>
+        <button type="button" class="sel__close" id="sel-close" aria-label="Seçimi kapat">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+
+      <div class="sel__title">
+        <div class="sel__cs" id="sel-cs"></div>
+        <div class="sel__sub" id="sel-sub"></div>
+      </div>
+
+      {# Rota: kalkış → varış (adsbdb.com tarife verisi) #}
+      <section class="route" id="route" aria-label="Rota" hidden>
+        <div class="route__ends">
+          <div class="route__ap"><span class="route__code" id="route-o-code"></span><span class="route__city" id="route-o-city"></span></div>
+          <div class="route__track" aria-hidden="true">
+            <span class="route__line"><span class="route__fill" id="route-fill"></span></span>
+            <span class="route__plane" id="route-plane">{{ plane(18, "currentColor", "transform: rotate(90deg)") }}</span>
+          </div>
+          <div class="route__ap route__ap--end"><span class="route__code" id="route-d-code"></span><span class="route__city" id="route-d-city"></span></div>
+        </div>
+        <p class="route__meta" id="route-meta"></p>
+        <p class="route__note" id="route-note" hidden></p>
+      </section>
+      <p class="route-msg" id="route-msg" hidden></p>
+
+      {# Planespotters.net fotoğrafı: kullanım koşulları gereği fotoğraf Planespotters sayfasına
+         bağlanır ve fotoğrafçının adı hemen altında gösterilir. #}
+      <figure class="sel__photo" id="photo" aria-busy="true">
+        <div class="sel__photo-frame">
+          <div class="skeleton" id="photo-skel" aria-hidden="true"></div>
+          <a class="sel__photo-link" id="photo-link" href="#" target="_blank" rel="noopener noreferrer" hidden>
+            <img id="photo-img" alt="" decoding="async">
+          </a>
+          <div class="sel__photo-empty" id="photo-empty" hidden>
+            {{ plane(64, "none", "stroke: currentColor; stroke-width: .6", "sel__photo-sketch") }}
+            <span>Bu uçak için fotoğraf yok</span>
+          </div>
+        </div>
+        <figcaption class="sel__credit" id="photo-credit" hidden>
+          Fotoğraf: <a id="photo-credit-link" href="#" target="_blank" rel="noopener noreferrer"></a> · Planespotters.net
+        </figcaption>
+      </figure>
+
+      <p class="sel__lost" id="sel-lost" hidden>Bu uçaktan yeni sinyal alınamadı; alıcı ağının kapsama alanından çıkmış ya da inmiş olabilir.</p>
+      <dl class="sel__grid">
+        <div><dt>İrtifa</dt><dd id="sel-alt"></dd></div>
+        <div><dt>Yer hızı</dt><dd id="sel-spd"></dd></div>
+        <div><dt>Yön</dt><dd id="sel-hdg"></dd></div>
+        <div><dt>Dikey hız</dt><dd id="sel-vs"></dd></div>
+        <div><dt>Tescil</dt><dd id="sel-reg"></dd></div>
+        <div><dt>Tip kodu</dt><dd id="sel-type"></dd></div>
+        <div><dt>ICAO24</dt><dd id="sel-icao"></dd></div>
+        <div><dt>Squawk</dt><dd id="sel-sq"></dd></div>
+      </dl>
+      <div class="sel__spark">
+        <span class="tile__label" id="spark-label">İrtifa geçmişi</span>
+        <svg id="spark" width="100%" height="56" viewBox="0 0 324 64" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <defs><linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E8743B" stop-opacity=".2"/><stop offset="1" stop-color="#E8743B" stop-opacity="0"/></linearGradient></defs>
+          <polygon id="spark-area" points="" fill="url(#spark-grad)"/>
+          <polyline id="spark-line" points="" fill="none" stroke="#E8743B" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="ac-list-wrap">
+    <h2 class="panel-label"><span id="list-title">GÖRÜNEN UÇAKLAR</span> <span id="list-count" class="panel-label__count"></span></h2>
+    <div class="ac-list" id="list"></div>
+  </section>
+</aside>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
+<script nonce="{{ csp_nonce }}">
+  window.MAP_CONFIG = {
+    pollSeconds: {{ poll_seconds }},
+    tiles: {{ tiles | tojson }},
+  };
+</script>
+<script src="{{ url_for('web.static', filename='js/map.js') }}"></script>
+{% endblock %}

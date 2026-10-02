@@ -1,0 +1,32 @@
+# PyTorch: varsayılan olarak PyPI'dan (CPU / platformun varsayılanı) kurulur.
+# NVIDIA GPU (CUDA 13.0) için aşağıdaki satırın başındaki # işaretini kaldırın:
+# --extra-index-url https://download.pytorch.org/whl/cu130
+
+# API ve sunucu
+flask>=3.0
+flask-compress>=1.15     # HTML/CSS/JS/JSON gzip-brotli sıkıştırması
+waitress>=3.0            # üretim WSGI sunucusu (yoksa Flask geliştirme sunucusuna düşülür)
+
+# Veritabanı
+sqlalchemy>=2.0
+psycopg2-binary>=2.9
+
+# Veri
+pandas>=2.2
+numpy>=1.26
+pyarrow>=16.0
+
+# Gecikme modeli
+scikit-learn>=1.5
+lightgbm>=4.3
+joblib>=1.4
+matplotlib>=3.8
+
+# Fotoğraf sınıflandırma
+torch>=2.6
+torchvision>=0.21
+pillow>=10.3
+
+# Yardımcılar
+requests>=2.32.4
+python-dotenv>=1.0

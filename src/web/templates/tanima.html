@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon, plane %}
+{% block title %}Uçak tanıma — {{ app_name }}{% endblock %}
+
+{# Sol menünün altı: modelin test başarısı #}
+{% block nav_extra %}
+{% if metrics.vision_top3 is not none %}
+<div class="sidenav__live" aria-hidden="true">
+  <span class="sidenav__live-state">EfficientNet</span>
+  <strong class="sidenav__live-count">{{ metrics.vision_top3 | tr_pct(1) }}</strong>
+  <span class="sidenav__live-unit">top-3</span>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <h1 class="page-title">Uçak <em>tanıma</em></h1>
+  <p class="lead">Bir uçak fotoğrafı yükleyin. Model, 70 uçak ailesi arasından en olası üçünü güven skorlarıyla gösterir.</p>
+</header>
+
+<div class="split">
+  <label class="split__side dropzone" id="dropzone">
+    <span class="hover">{{ plane(120, "#303845") }}</span>
+    <span class="dropzone__title">Fotoğrafı sürükleyin ya da seçin</span>
+    <span class="small">JPG veya PNG · en fazla {{ max_upload_mb }} MB</span>
+    <span class="btn btn--primary" aria-hidden="true">Dosya seç</span>
+    <input type="file" id="file" class="sr-only" accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+           data-max-mb="{{ max_upload_mb }}">
+    <span class="small dropzone__hint">En iyi sonuç için uçağın tamamı görünsün; yandan ya da çapraz açılar daha isabetli sonuç verir.</span>
+  </label>
+
+  <section class="card split__main result" id="result" aria-label="Sınıflandırma sonucu" aria-live="polite" aria-busy="false">
+    <div class="result__head">
+      <span class="profile__title">En olası üç aile</span>
+      <span class="chip" id="c-chip" hidden></span>
+    </div>
+
+    <p class="status" id="c-status" role="status" hidden></p>
+
+    <div class="classify">
+      <div class="photo" id="photo">
+        <span class="photo__empty" id="photo-empty">Fotoğraf seçildiğinde burada görünür</span>
+        <img id="photo-img" alt="" hidden>
+        <div class="scan" id="scan" aria-hidden="true"></div>
+      </div>
+      <div class="ranks" id="ranks">
+        <p class="small">Sonuçlar burada gösterilecek. Birbirine çok benzeyen aileler tek satırda, birleşik olasılıkla verilir.</p>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <span style="color: var(--amber)">{{ icon("info", 20) }}</span>
+      <span>Birbirine çok benzeyen aileler birlikte gösterilir: {{ confusable | join(", ") }}.</span>
+    </div>
+
+    <div class="tiles-3">
+      <div class="tile"><span class="tile__label">Test top-1</span><span class="tile__value tile__value--lg">{{ metrics.vision_top1 | tr_pct(1) if metrics.vision_top1 is not none else "—" }}</span></div>
+      <div class="tile"><span class="tile__label">Test top-3</span><span class="tile__value tile__value--lg">{{ metrics.vision_top3 | tr_pct(1) if metrics.vision_top3 is not none else "—" }}</span></div>
+      <div class="tile"><span class="tile__label">Model</span><span class="tile__value tile__value--lg">EfficientNet-B0</span></div>
+    </div>
+    <p class="small">Veri seti (FGVC-Aircraft) 2013 tarihli olduğu için A350 ve 737 MAX gibi yeni tipler en benzer aileye atanır.</p>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('web.static', filename='js/classify.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,32 @@
+Copyright (c) 2026 ibrah. All rights reserved.
+
+PROPRIETARY LICENSE / ÖZEL LİSANS
+
+This repository and its contents (source code, configuration, documentation and
+original assets, together the "Software") are the exclusive property of the
+copyright holder. The Software is made visible for viewing purposes only.
+
+No permission is granted to use, copy, modify, merge, publish, distribute,
+sublicense, host, deploy as a service, or sell the Software or any part of it,
+in source or binary form, for any purpose (commercial or non-commercial),
+without the prior written permission of the copyright holder.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM THE
+SOFTWARE OR ITS USE.
+
+Third-party components (libraries, the 3D aircraft model, datasets, map tiles,
+fonts, external data services) are NOT covered by this license and remain under
+their own licenses and terms; see README.md ("Veri kaynakları, atıflar ve
+lisanslar").
+
+----------------------------------------------------------------------------
+
+Bu depo ve içeriği (kaynak kod, yapılandırma, belgeler ve özgün varlıklar)
+telif hakkı sahibine aittir ve yalnızca görüntüleme amacıyla görünür kılınmıştır.
+Telif hakkı sahibinin önceden yazılı izni olmadan kullanılamaz, kopyalanamaz,
+değiştirilemez, dağıtılamaz, bir hizmet olarak yayınlanamaz veya satılamaz.
+Üçüncü taraf bileşenler (kütüphaneler, 3B uçak modeli, veri setleri, harita
+karoları vb.) bu lisansın kapsamında değildir; kendi lisanslarına tabidir.

@@ -1,0 +1,209 @@
+/* ==========================================================================
+   Canlı harita — yenilenmiş arayüz (app.css'teki temel harita stillerinin üzerine)
+   Panel haritanın üzerinde yüzer; seçili uçağın rotası panelin en üstünde ve haritada gösterilir.
+   ========================================================================== */
+.page--map {
+  --glass: rgba(10, 12, 15, .9);
+  --glass-line: rgba(255, 255, 255, .1);
+  --ink: #FFFFFF;
+  --ink-2: #DAD6CF;
+  --ink-3: #A7A39D;
+  --accent: #E8743B;
+  --route-flown: #E8743B;
+  --route-left: #FFFFFF;
+  --panel-w: 400px;
+  position: relative;
+}
+.page--map .map-area { flex: 1 1 auto; }
+
+/* Harita üzerindeki kontroller: düz zemin, ince çizgi, tek küçük yarıçap (ekrana yaslı yüzeyler köşesizdir) */
+.page--map {
+  --r: 6px;
+}
+.page--map .map-search, .page--map .map-live, .page--map .map-zoom button, .page--map .map-info,
+.page--map .map-msg, .page--map .legend__item, .page--map .map-tip {
+  background: rgba(10, 13, 17, .92); border: 1px solid var(--hair);
+  box-shadow: 0 6px 18px rgba(4, 5, 8, .4);
+}
+.page--map .map-top { right: calc(var(--panel-w) + 20px); top: 20px; left: 20px; }
+.page--map .map-search { height: 48px; border-radius: var(--r); color: var(--ink-3); }
+.page--map .map-search:focus-within { border-color: var(--accent); }
+.page--map .map-search input { font-size: 15px; color: var(--ink); }
+.page--map .map-live { height: 48px; border-radius: var(--r); font-size: 12px; color: var(--ink-2); }
+.page--map .legend { left: 20px; top: 80px; right: calc(var(--panel-w) + 20px); }
+.page--map .legend__item { height: 32px; border-radius: var(--r); font-size: 13px; color: var(--ink); }
+.page--map .legend__count { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.page--map .map-zoom { right: calc(var(--panel-w) + 20px); bottom: 24px; }
+.page--map .map-zoom button { border-radius: var(--r); }
+.page--map .map-info { left: 20px; bottom: 30px; border-radius: 4px; color: var(--ink-3); font-size: 11.5px; }
+.page--map .map-msg { border-radius: var(--r); }
+.page--map .map-tip { border-radius: var(--r); }
+.page--map .leaflet-bottom.leaflet-left .leaflet-control-attribution { margin-left: 20px; }
+
+/* ---------- Sağ panel: ekrana yaslı, sol şeritle aynı dil ---------- */
+.page--map .map-panel {
+  position: absolute; right: 0; top: 0; bottom: 0; z-index: 700;
+  width: var(--panel-w); padding: 22px 24px; gap: 20px;
+  border-radius: 0; border: 0; border-left: 1px solid var(--hair);
+  background: var(--sheet); box-shadow: none;
+}
+.page--map .panel-label { font-size: 11px; color: var(--ink-3); }
+
+/* Boş durum: kutu içinde kutu yok, düz metin ve altında ince çizgi */
+.sel__empty { display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  padding: 0 0 20px; border: 0; border-bottom: 1px solid var(--hair); border-radius: 0; background: none;
+  color: var(--ink-3); font-size: 14px; line-height: 1.55; }
+.sel__empty p { margin: 0; max-width: 34ch; text-wrap: pretty; }
+.sel__empty-icon { display: none; }
+.sel__empty-title { margin: 0; font-family: var(--font-head); font-stretch: 112%; font-size: 21px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
+
+.page--map .sel__body { gap: 16px; }
+.page--map .sel__head { display: flex; align-items: center; gap: 8px; }
+.page--map .sel__head .kind-chip { margin-right: auto; font-size: 12px; color: var(--ink-2); }
+.page--map .chip { background: rgba(236, 232, 224, .08); color: var(--ink-2); border-radius: 4px; font-size: 11.5px; }
+.sel__close {
+  width: 32px; height: 32px; display: grid; place-items: center; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--hair); background: none; color: var(--ink-2);
+}
+.sel__close:hover { background: rgba(236, 232, 224, .08); color: var(--ink); }
+.page--map .sel__cs { font-size: 40px; letter-spacing: -.03em; color: var(--ink); }
+.page--map .sel__sub { font-size: 15px; color: var(--ink-2); }
+
+/* Rota kartı */
+.route {
+  padding: 16px 0 14px; display: flex; flex-direction: column; gap: 12px;
+  border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair);
+}
+.route__ends { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
+.route__ap { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 120px; }
+.route__ap--end { text-align: right; align-items: flex-end; }
+.route__code { font-family: var(--font-head); font-weight: 800; font-size: 30px; line-height: 1; letter-spacing: -.02em; color: var(--ink); }
+.route__city { font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.route__track { position: relative; height: 22px; }
+.route__line { position: absolute; left: 0; right: 0; top: 10px; height: 2px; border-radius: 2px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .45) 0 6px, transparent 6px 11px); }
+.route__fill { position: absolute; left: 0; top: 0; bottom: 0; width: var(--f, 0%); background: var(--route-flown); border-radius: 2px; }
+.route__plane { position: absolute; top: 2px; left: var(--f, 0%); transform: translateX(-50%); color: var(--accent);
+  }
+.route__meta { margin: 0; font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); }
+.route__note { margin: 0; font-size: 12px; line-height: 1.5; color: #F0C4AE; }
+.route-msg { margin: 0; padding: 12px 14px; border-radius: 4px; font-size: 13px; color: var(--ink-3);
+  border: 1px dashed var(--hair); }
+
+/* Fotoğraf, değerler */
+.page--map .sel__photo-frame { border-radius: 4px; border-color: var(--hair); }
+.page--map .sel__grid { gap: 0; padding: 0; border-radius: 0; border: 1px solid var(--hair); background: none; }
+.page--map .sel__grid > div { padding: 11px 14px 12px; border-top: 1px solid var(--hair-soft); }
+.page--map .sel__grid > div:nth-child(-n+2) { border-top: 0; }
+.page--map .sel__grid > div:nth-child(odd) { border-right: 1px solid var(--hair-soft); }
+.page--map .sel__grid dt { font-size: 11.5px; color: var(--ink-3); }
+.page--map .sel__grid dd { font-size: 16px; color: var(--ink); }
+.page--map .sel__credit, .page--map .tile__label { color: var(--ink-3); }
+
+/* Liste */
+.page--map .ac-row { border-radius: 4px; }
+.page--map .ac-row:hover { background: rgba(236, 232, 224, .06); }
+.page--map .ac-row[aria-pressed="true"] { background: rgba(232, 116, 59, .1); }
+.page--map .ac-row__cs { color: var(--ink); }
+.page--map .ac-row__type { color: var(--ink-2); }
+.page--map .ac-row__fl { color: var(--ink-3); }
+
+/* Haritadaki havalimanı etiketleri (Leaflet tooltip) */
+.leaflet-tooltip.ap-label {
+  padding: 3px 8px; border-radius: 3px; border: 1px solid rgba(232, 116, 59, .5);
+  background: rgba(10, 13, 17, .94); color: #fff; box-shadow: 0 6px 16px rgba(0, 0, 0, .4);
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: .06em;
+}
+.leaflet-tooltip.ap-label::before { display: none; }
+
+/* ---------- Dar ekran: panel haritanın altına iner ---------- */
+@media (max-width: 1100px) {
+  .page--map .map-panel { position: static; width: auto; border: 0; border-top: 1px solid var(--hair); }
+  .page--map .map-top, .page--map .legend { right: 20px; }
+  .page--map .map-zoom { right: 20px; }
+}
+
+@media (max-width: 640px) {
+  .page--map .map-top { left: 12px; right: 12px; top: 12px; flex-wrap: wrap; gap: 8px; }
+  .page--map .map-search { flex-basis: 100%; height: 46px; }
+  .page--map .map-live { height: 34px; padding: 0 12px; font-size: 11px; }
+  .page--map .legend { left: 12px; right: 12px; top: 112px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+  .page--map .legend::-webkit-scrollbar { display: none; }
+  .page--map .legend__item { flex-shrink: 0; }
+  .page--map .map-info { display: none; }
+}
+/* Uzaktan bakınca dünyanın dışında kalan alan, koyu harita zemininin rengiyle */
+.page--map .leaflet-container, .page--map .map { background: #14161A; }
+
+/* Radarı yenile */
+.map-refresh {
+  flex-shrink: 0; width: 48px; height: 48px; display: grid; place-items: center; cursor: pointer;
+  border-radius: var(--r); background: rgba(10, 13, 17, .92); border: 1px solid var(--hair); color: var(--ink-2);
+  box-shadow: 0 6px 18px rgba(4, 5, 8, .4); transition: color .15s ease, border-color .15s ease;
+}
+.map-refresh:hover { color: var(--accent); border-color: rgba(232, 116, 59, .5); }
+.map-refresh.is-spinning svg { animation: spin .8s linear infinite; }
+@media (max-width: 640px) { .map-refresh { width: 34px; height: 34px; } }
+
+/* ---------- Açılış: teknik çizim kâğıdı → canlı harita ---------- */
+.map-boot { position: absolute; inset: 0; z-index: 640; pointer-events: none; overflow: hidden; }
+.map-boot__paper {
+  position: absolute; inset: 0;
+  background: radial-gradient(120% 90% at 50% 45%, #1C242E 0%, #151B22 45%, #0A0D11 100%);
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 1.1s cubic-bezier(.77, 0, .175, 1);
+}
+.map-boot.is-open .map-boot__paper { clip-path: inset(0 0 0 100%); }
+/* Çizgi, kâğıdın kırpma kenarıyla aynı eğriyle soldan sağa ilerler */
+.map-boot__bar { position: absolute; inset: 0; transform: translate3d(0, 0, 0); transition: transform 1.1s cubic-bezier(.77, 0, .175, 1); }
+.map-boot.is-open .map-boot__bar { transform: translate3d(100%, 0, 0); }
+.map-boot__grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(236, 232, 224, .2) 1px, transparent 1px), linear-gradient(90deg, rgba(236, 232, 224, .2) 1px, transparent 1px),
+    linear-gradient(rgba(236, 232, 224, .1) 1px, transparent 1px), linear-gradient(90deg, rgba(236, 232, 224, .1) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+}
+.map-boot__text {
+  position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -50%);
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: rgba(236, 232, 224, .85);
+}
+.map-boot__wipe {
+  position: absolute; top: 0; bottom: 0; left: 0; width: 2px; opacity: 0;
+  background: linear-gradient(180deg, transparent, #FFD9C2 18%, #fff 50%, #FFD9C2 82%, transparent);
+  box-shadow: 0 0 18px 4px rgba(232, 116, 59, .55);
+}
+.map-boot.is-open .map-boot__wipe { opacity: 1; }
+
+/* Fotoğrafı olmayan uçak: kâğıt üzerinde uçak taslağı */
+.page--map .sel__photo-empty {
+  flex-direction: column; gap: 10px; color: rgba(236, 232, 224, .8);
+  background-color: #151B22;
+  background-image:
+    linear-gradient(rgba(236, 232, 224, .16) 1px, transparent 1px), linear-gradient(90deg, rgba(236, 232, 224, .16) 1px, transparent 1px);
+  background-size: 20px 20px;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em;
+}
+.sel__photo-sketch { color: #F0ECE6; }
+
+/* Rota: kalan kısmın kesikleri varışa doğru akar */
+.route-left { animation: route-flow 1.4s linear infinite; }
+@keyframes route-flow { to { stroke-dashoffset: -14; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .map-boot { transition: opacity .3s ease; }
+  .map-boot__wipe { display: none; }
+  .map-boot.is-open { opacity: 0; }
+  .map-boot__paper, .map-boot__bar { transition: none; }
+  .map-boot.is-open .map-boot__paper { clip-path: none; }
+  .route-left { animation: none; }
+}
+
+/* Fotoğraf yüklenirken: aynı teknik çizim kâğıdı, üzerinden ışık geçer */
+.page--map .sel__photo-frame .skeleton {
+  background-color: #151B22;
+  background-image:
+    linear-gradient(100deg, transparent 30%, rgba(236, 232, 224, .12) 50%, transparent 70%),
+    linear-gradient(rgba(236, 232, 224, .16) 1px, transparent 1px), linear-gradient(90deg, rgba(236, 232, 224, .16) 1px, transparent 1px);
+  background-size: 200% 100%, 20px 20px, 20px 20px;
+}

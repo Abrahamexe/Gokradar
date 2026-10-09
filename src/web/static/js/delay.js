@@ -115,12 +115,13 @@
     const arc = $("r-arc");
     const len = Math.max(0.5, d.delay_probability * ARC_LEN);
     arc.style.display = "";
+    arc.dataset.level = d.is_delayed ? "high" : "low";   // yüksek risk amber
     arc.setAttribute("stroke-dasharray", `${len.toFixed(1)} 440`);
     arc.style.setProperty("--arc-len", len.toFixed(1));
     restart(arc);
     $("r-pct").textContent = GR.fmtPct(d.delay_probability);
 
-    renderProfile(d.time_profile || []);
+    renderProfile(d.time_profile || [], d.threshold);
     renderWeather(d.origin, d.weather);
     renderNas(d);
 
@@ -151,7 +152,7 @@
     box.replaceChildren(title, list, foot);
   }
 
-  function renderProfile(profile) {
+  function renderProfile(profile, threshold) {
     const box = $("r-profile"), note = $("r-profile-note");
     if (!profile.length) {
       box.replaceChildren(Object.assign(document.createElement("p"), {
@@ -161,14 +162,16 @@
     }
     box.replaceChildren(...profile.map((p, i) => {
       const row = document.createElement("div");
-      row.className = "profile__row" + (p.selected ? " profile__row--sel" : "");
+      const high = threshold != null && p.probability >= threshold;   // karar eşiğinin üstü: amber
+      row.className = "profile__row" + (p.selected ? " profile__row--sel" : "") + (high ? " profile__row--high" : "");
       row.innerHTML = '<span class="profile__time mono"></span><div class="bar-track"><div class="bar"></div></div>' +
                       '<span class="profile__pct mono"></span>';
       row.querySelector(".profile__time").textContent = p.dep_time;
       const bar = row.querySelector(".bar");
       bar.style.width = `${Math.max(1, p.probability * 100).toFixed(1)}%`;
       bar.style.animationDelay = `${(i * 0.08).toFixed(2)}s`;
-      if (p.selected) bar.classList.add("bar--amber");
+      if (high) bar.classList.add("bar--warn");
+      else if (p.selected) bar.classList.add("bar--accent");
       row.querySelector(".profile__pct").textContent = GR.fmtPct(p.probability);
       row.setAttribute("aria-label", `${p.dep_time}: ${GR.fmtPct(p.probability)}${p.selected ? " (seçilen saat)" : ""}`);
       return row;

@@ -1,0 +1,10 @@
+{# Ortak menü: üstte ortalanmış buzlu cam hap. Bulunulan sayfa aria-current ile işaretlenir. #}
+{% from "_icons.html" import plane %}
+<header class="nav" id="nav">
+  <a class="nav__brand" href="{{ url_for('web.index') }}">{{ plane(18, "var(--accent)") }}<span>{{ app_name }}</span></a>
+  <nav class="nav__links" aria-label="Ana menü">
+    {% for endpoint, label in [("web.harita", "Canlı harita"), ("web.gecikme", "Gecikme"), ("web.tanima", "Tanıma")] %}
+    <a href="{{ url_for(endpoint) }}"{% if active == endpoint %} aria-current="page"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </nav>
+</header>

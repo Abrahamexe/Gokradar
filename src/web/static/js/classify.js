@@ -86,7 +86,7 @@
       const bar = row.querySelector(".bar");
       bar.style.width = `${Math.max(1, r.score * 100).toFixed(1)}%`;
       bar.style.animationDelay = `${(i * 0.2).toFixed(1)}s`;
-      if (i === 0) bar.classList.add("bar--amber");
+      if (i === 0) bar.classList.add("bar--accent");
       if (r.grouped) {
         const badge = document.createElement("span");
         badge.className = "rank__badge";

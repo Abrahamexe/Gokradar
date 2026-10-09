@@ -1,20 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Gecikme tahmini — {{ app_name }}{% endblock %}
-
-{# Sol menünün altı: modelin test başarısı #}
-{% block nav_extra %}
-{% if metrics.delay_roc_auc is not none %}
-<div class="sidenav__live" aria-hidden="true">
-  <span class="sidenav__live-state">LightGBM</span>
-  <strong class="sidenav__live-count">{{ metrics.delay_roc_auc | tr_num(3) }}</strong>
-  <span class="sidenav__live-unit">ROC-AUC</span>
-</div>
-{% endif %}
-{% endblock %}
+{% block title %}Gecikme tahmini · {{ app_name }}{% endblock %}
+{% block backdrop %}<div class="backdrop backdrop--window" aria-hidden="true"></div>{% endblock %}
 
 {% block content %}
 <header class="page-header">
-  <h1 class="page-title">Gecikme <em>tahmini</em></h1>
+  <p class="eyebrow">02 · Gecikme tahmini</p>
+  <h1 class="page-title">Kalkıştan önce riski bilin.</h1>
   <p class="lead">Uçuş bilgilerini girin. Model, kalkış havalimanının güncel hava durumunu da hesaba katarak 15 dakikayı aşan gecikme olasılığını verir.</p>
 </header>
 
@@ -41,14 +32,14 @@
         <input id="date" name="date" type="date" required aria-describedby="date-error">
         <span class="field__error" id="date-error" hidden></span>
       </label>
-      <label class="field">Planlanan kalkış (yerel)
+      <label class="field">Kalkış (yerel)
         <input id="dep_time" name="dep_time" type="time" required aria-describedby="dep_time-error">
         <span class="field__error" id="dep_time-error" hidden></span>
       </label>
     </div>
     <button type="submit" class="btn btn--primary btn--block" id="submit">Tahmini hesapla</button>
     <p class="status" id="form-status" role="status" aria-live="polite" hidden></p>
-    <p class="small">Kalkış yalnızca desteklenen havalimanlarından seçilebilir. Varış havalimanı serbesttir; eğitim verisinde az görülen varışlar “diğer” grubunda değerlendirilir.</p>
+    <p class="small">Kalkış yalnızca desteklenen havalimanlarından seçilebilir. Varış serbesttir; eğitim verisinde az görülen varışlar “diğer” grubunda değerlendirilir.</p>
   </form>
 
   <section class="card split__main result" aria-label="Tahmin sonucu" aria-live="polite" aria-busy="false" id="result">
@@ -59,9 +50,9 @@
 
     <div class="result__top">
       <div class="gauge">
-        <svg width="360" height="200" viewBox="0 0 360 200" aria-hidden="true" focusable="false">
-          <path d="M40 180 A140 140 0 0 1 320 180" fill="none" stroke="#1F2630" stroke-width="12" stroke-linecap="round"/>
-          <path class="gauge__arc" id="r-arc" d="M40 180 A140 140 0 0 1 320 180" fill="none" stroke="#E8743B"
+        <svg width="320" height="178" viewBox="0 0 360 200" aria-hidden="true" focusable="false">
+          <path class="gauge__track" d="M40 180 A140 140 0 0 1 320 180" fill="none" stroke-width="12" stroke-linecap="round"/>
+          <path class="gauge__arc" id="r-arc" d="M40 180 A140 140 0 0 1 320 180" fill="none"
                 stroke-width="12" stroke-linecap="round" stroke-dasharray="0 440" style="display: none"/>
         </svg>
         <div class="gauge__value">
@@ -72,7 +63,7 @@
       <div class="profile">
         <span class="profile__title">Aynı rota, günün farklı saatleri</span>
         <div class="profile__bars" id="r-profile">
-          <p class="small">Tahmin yapıldığında aynı uçuşun gün içindeki diğer saatler için olasılıkları burada gösterilir.</p>
+          <p class="small">Tahmin yapıldığında aynı uçuşun gün içindeki diğer saatler için olasılıkları burada görünür.</p>
         </div>
         <p class="small" id="r-profile-note" hidden></p>
       </div>

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon, plane %}
-{% block title %}Canlı harita — {{ app_name }}{% endblock %}
+{% block title %}Canlı harita · {{ app_name }}{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
@@ -8,19 +8,11 @@
 {% endblock %}
 {% block main_class %} page--map{% endblock %}
 {% block body_class %}app app--map{% endblock %}
-{# Sol menünün altı: radardaki canlı uçak sayısı (map.js günceller) #}
-{% block nav_extra %}
-<div class="sidenav__live" id="nav-live" data-state="loading" aria-hidden="true">
-  <span class="sidenav__live-state"><i class="live-dot"></i>Canlı</span>
-  <strong class="sidenav__live-count" id="nav-live-count">-</strong>
-  <span class="sidenav__live-unit">uçak</span>
-</div>
-{% endblock %}
 
 {% block content %}
 <div class="map-area">
   <div id="map" class="map" aria-label="Canlı uçak haritası"></div>
-  {# Açılış: veri gelene kadar teknik çizim kâğıdı; veri gelince amber silme çizgisiyle açılır #}
+  {# Açılış: veri gelene kadar radar ızgarası; veri gelince camgöbeği tarama çizgisiyle açılır #}
   <div class="map-boot" id="map-boot" aria-hidden="true">
     <div class="map-boot__paper">
       <div class="map-boot__grid"></div>
@@ -56,7 +48,7 @@
   <div class="map-info" id="map-info">Harita: {{ tiles.name }} · Veri: adsb.lol</div>
 </div>
 
-<aside class="map-panel" aria-label="Uçak bilgileri">
+<aside class="map-panel glass" aria-label="Uçak bilgileri">
   <section class="sel" id="sel" aria-live="polite">
     <div class="sel__empty" id="sel-empty">
       <span class="sel__empty-icon" aria-hidden="true">{{ icon("radar", 28) }}</span>
@@ -125,9 +117,9 @@
       <div class="sel__spark">
         <span class="tile__label" id="spark-label">İrtifa geçmişi</span>
         <svg id="spark" width="100%" height="56" viewBox="0 0 324 64" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-          <defs><linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E8743B" stop-opacity=".2"/><stop offset="1" stop-color="#E8743B" stop-opacity="0"/></linearGradient></defs>
+          <defs><linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4FD1FF" stop-opacity=".22"/><stop offset="1" stop-color="#4FD1FF" stop-opacity="0"/></linearGradient></defs>
           <polygon id="spark-area" points="" fill="url(#spark-grad)"/>
-          <polyline id="spark-line" points="" fill="none" stroke="#E8743B" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+          <polyline id="spark-line" points="" fill="none" stroke="#4FD1FF" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
         </svg>
       </div>
     </div>

@@ -12,14 +12,6 @@ log = logging.getLogger(__name__)
 web = Blueprint("web", __name__, template_folder="templates", static_folder="static",
                 static_url_path="/static")
 
-PAGES = [  # (endpoint, yol, menü etiketi, ikon)
-    ("web.index", "/", "Ana sayfa", "logo"),
-    ("web.harita", "/harita", "Canlı harita", "radar"),
-    ("web.gecikme", "/gecikme", "Gecikme tahmini", "clock"),
-    ("web.tanima", "/tanima", "Uçak tanıma", "camera"),
-]
-
-
 def _read_json(path):
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -54,7 +46,7 @@ def tr_pct(value, digits: int = 1) -> str:
 
 @web.app_context_processor
 def _globals():
-    return {"app_name": config.APP_NAME, "nav_pages": PAGES}
+    return {"app_name": config.APP_NAME}
 
 
 @web.get("/")

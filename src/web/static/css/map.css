@@ -1,194 +1,295 @@
 /* ==========================================================================
-   Canlı harita — yenilenmiş arayüz (app.css'teki temel harita stillerinin üzerine)
-   Panel haritanın üzerinde yüzer; seçili uçağın rotası panelin en üstünde ve haritada gösterilir.
+   Canlı harita: tam ekran gerçek harita (Leaflet + Stadia koyu karolar), üstünde yüzen
+   buzlu cam kontroller. Menü üstte ortada, arama sol üstte, uçak paneli sağda, tür açıklaması sol altta.
    ========================================================================== */
 .page--map {
-  --glass: rgba(10, 12, 15, .9);
-  --glass-line: rgba(255, 255, 255, .1);
-  --ink: #FFFFFF;
-  --ink-2: #DAD6CF;
-  --ink-3: #A7A39D;
-  --accent: #E8743B;
-  --route-flown: #E8743B;
+  --panel-w: 380px;
+  --gap: 20px;
+  --route-flown: var(--accent);
   --route-left: #FFFFFF;
-  --panel-w: 400px;
-  position: relative;
+  position: relative; height: 100vh; height: 100dvh; overflow: hidden;
 }
-.page--map .map-area { flex: 1 1 auto; }
-
-/* Harita üzerindeki kontroller: düz zemin, ince çizgi, tek küçük yarıçap (ekrana yaslı yüzeyler köşesizdir) */
-.page--map {
-  --r: 6px;
+.map-area { position: absolute; inset: 0; background: #0B121A; overflow: hidden; }
+.map { position: absolute; inset: 0; background: #0B121A; }
+.leaflet-container { background: #0B121A; font-family: var(--font); }
+/* Gri koyu karoları Kokpit lacivertine çeker (yalnızca karo katmanı; uçaklar ve rota etkilenmez) */
+.leaflet-tile-pane { filter: sepia(.45) hue-rotate(158deg) saturate(1.25) brightness(.88) contrast(1.05); }
+.leaflet-control-attribution {
+  background: rgba(5, 9, 15, .7) !important; color: var(--muted) !important;
+  font-size: 11px; border-radius: 8px 8px 0 0; padding: 2px 8px !important;
 }
-.page--map .map-search, .page--map .map-live, .page--map .map-zoom button, .page--map .map-info,
-.page--map .map-msg, .page--map .legend__item, .page--map .map-tip {
-  background: rgba(10, 13, 17, .92); border: 1px solid var(--hair);
-  box-shadow: 0 6px 18px rgba(4, 5, 8, .4);
+.leaflet-control-attribution a { color: var(--text-body) !important; }
+.leaflet-bottom.leaflet-left .leaflet-control-attribution { margin-left: var(--gap); }
+
+/* Yüzen kontrollerin ortak cam yüzeyi */
+.map-search, .map-live, .map-refresh, .map-zoom, .map-info, .map-msg, .map-tip, .legend {
+  background: rgba(10, 18, 28, .66);
+  -webkit-backdrop-filter: blur(20px) saturate(150%); backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid var(--line); box-shadow: var(--edge), 0 10px 30px rgba(2, 8, 16, .4);
 }
-.page--map .map-top { right: calc(var(--panel-w) + 20px); top: 20px; left: 20px; }
-.page--map .map-search { height: 48px; border-radius: var(--r); color: var(--ink-3); }
-.page--map .map-search:focus-within { border-color: var(--accent); }
-.page--map .map-search input { font-size: 15px; color: var(--ink); }
-.page--map .map-live { height: 48px; border-radius: var(--r); font-size: 12px; color: var(--ink-2); }
-.page--map .legend { left: 20px; top: 80px; right: calc(var(--panel-w) + 20px); }
-.page--map .legend__item { height: 32px; border-radius: var(--r); font-size: 13px; color: var(--ink); }
-.page--map .legend__count { color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.page--map .map-zoom { right: calc(var(--panel-w) + 20px); bottom: 24px; }
-.page--map .map-zoom button { border-radius: var(--r); }
-.page--map .map-info { left: 20px; bottom: 30px; border-radius: 4px; color: var(--ink-3); font-size: 11.5px; }
-.page--map .map-msg { border-radius: var(--r); }
-.page--map .map-tip { border-radius: var(--r); }
-.page--map .leaflet-bottom.leaflet-left .leaflet-control-attribution { margin-left: 20px; }
 
-/* ---------- Sağ panel: ekrana yaslı, sol şeritle aynı dil ---------- */
-.page--map .map-panel {
-  position: absolute; right: 0; top: 0; bottom: 0; z-index: 700;
-  width: var(--panel-w); padding: 22px 24px; gap: 20px;
-  border-radius: 0; border: 0; border-left: 1px solid var(--hair);
-  background: var(--sheet); box-shadow: none;
+/* Sol üst: arama, canlı durum, yenile */
+.map-top {
+  position: absolute; left: var(--gap); top: var(--gap); z-index: 600; width: 360px;
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center; pointer-events: none;
 }
-.page--map .panel-label { font-size: 11px; color: var(--ink-3); }
-
-/* Boş durum: kutu içinde kutu yok, düz metin ve altında ince çizgi */
-.sel__empty { display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
-  padding: 0 0 20px; border: 0; border-bottom: 1px solid var(--hair); border-radius: 0; background: none;
-  color: var(--ink-3); font-size: 14px; line-height: 1.55; }
-.sel__empty p { margin: 0; max-width: 34ch; text-wrap: pretty; }
-.sel__empty-icon { display: none; }
-.sel__empty-title { margin: 0; font-family: var(--font-head); font-stretch: 112%; font-size: 21px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
-
-.page--map .sel__body { gap: 16px; }
-.page--map .sel__head { display: flex; align-items: center; gap: 8px; }
-.page--map .sel__head .kind-chip { margin-right: auto; font-size: 12px; color: var(--ink-2); }
-.page--map .chip { background: rgba(236, 232, 224, .08); color: var(--ink-2); border-radius: 4px; font-size: 11.5px; }
-.sel__close {
-  width: 32px; height: 32px; display: grid; place-items: center; border-radius: 4px; cursor: pointer;
-  border: 1px solid var(--hair); background: none; color: var(--ink-2);
+.map-top > * { pointer-events: auto; }
+.map-search {
+  flex: 1 1 100%; min-width: 0; height: 48px; padding: 0 16px; border-radius: 999px;
+  display: flex; align-items: center; gap: 10px; color: var(--muted);
+  transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
 }
-.sel__close:hover { background: rgba(236, 232, 224, .08); color: var(--ink); }
-.page--map .sel__cs { font-size: 40px; letter-spacing: -.03em; color: var(--ink); }
-.page--map .sel__sub { font-size: 15px; color: var(--ink-2); }
-
-/* Rota kartı */
-.route {
-  padding: 16px 0 14px; display: flex; flex-direction: column; gap: 12px;
-  border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair);
+.map-search input { flex: 1; min-width: 0; height: 44px; border: 0; background: transparent; color: var(--text); font-size: 14px; }
+.map-search input::placeholder { color: rgba(143, 162, 178, .75); }
+.map-search input:focus { outline: none; }
+.map-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79, 209, 255, .2); }
+.map-live {
+  height: 38px; padding: 0 14px; border-radius: 999px; display: flex; align-items: center; gap: 9px;
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-body); white-space: nowrap; font-variant-numeric: tabular-nums;
 }
-.route__ends { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
-.route__ap { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 120px; }
-.route__ap--end { text-align: right; align-items: flex-end; }
-.route__code { font-family: var(--font-head); font-weight: 800; font-size: 30px; line-height: 1; letter-spacing: -.02em; color: var(--ink); }
-.route__city { font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.route__track { position: relative; height: 22px; }
-.route__line { position: absolute; left: 0; right: 0; top: 10px; height: 2px; border-radius: 2px;
-  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .45) 0 6px, transparent 6px 11px); }
-.route__fill { position: absolute; left: 0; top: 0; bottom: 0; width: var(--f, 0%); background: var(--route-flown); border-radius: 2px; }
-.route__plane { position: absolute; top: 2px; left: var(--f, 0%); transform: translateX(-50%); color: var(--accent);
-  }
-.route__meta { margin: 0; font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); }
-.route__note { margin: 0; font-size: 12px; line-height: 1.5; color: #F0C4AE; }
-.route-msg { margin: 0; padding: 12px 14px; border-radius: 4px; font-size: 13px; color: var(--ink-3);
-  border: 1px dashed var(--hair); }
+.map-live[data-state="loading"] .live-dot, .map-live[data-state="idle"] .live-dot { background: var(--muted); box-shadow: none; }
+.map-live[data-state="stale"] .live-dot { background: var(--warn); box-shadow: none; animation: none; }
+.map-live[data-state="error"] { border-color: var(--warn-line); color: var(--warn-text); }
+.map-live[data-state="error"] .live-dot { background: var(--warn); box-shadow: none; animation: none; }
+.map-refresh {
+  width: 38px; height: 38px; display: grid; place-items: center; cursor: pointer; border-radius: 50%; color: var(--text-body);
+  transition: color .2s var(--ease), border-color .2s var(--ease), transform .15s var(--ease);
+}
+.map-refresh:hover { color: var(--accent); border-color: var(--accent-dim); }
+.map-refresh:active { transform: scale(.94); }
+.map-refresh.is-spinning svg { animation: spin .8s linear infinite; }
+.map-info {
+  position: absolute; left: var(--gap); top: 124px; z-index: 600; max-width: 360px;
+  padding: 6px 12px; border-radius: 999px; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted);
+}
 
-/* Fotoğraf, değerler */
-.page--map .sel__photo-frame { border-radius: 4px; border-color: var(--hair); }
-.page--map .sel__grid { gap: 0; padding: 0; border-radius: 0; border: 1px solid var(--hair); background: none; }
-.page--map .sel__grid > div { padding: 11px 14px 12px; border-top: 1px solid var(--hair-soft); }
-.page--map .sel__grid > div:nth-child(-n+2) { border-top: 0; }
-.page--map .sel__grid > div:nth-child(odd) { border-right: 1px solid var(--hair-soft); }
-.page--map .sel__grid dt { font-size: 11.5px; color: var(--ink-3); }
-.page--map .sel__grid dd { font-size: 16px; color: var(--ink); }
-.page--map .sel__credit, .page--map .tile__label { color: var(--ink-3); }
+.map-msg {
+  position: absolute; left: 50%; top: 84px; transform: translateX(-50%); z-index: 650;
+  max-width: min(560px, calc(100% - 48px)); padding: 12px 16px; border-radius: var(--r-md);
+  font-size: 14px; line-height: 1.5; color: var(--text);
+}
 
-/* Liste */
-.page--map .ac-row { border-radius: 4px; }
-.page--map .ac-row:hover { background: rgba(236, 232, 224, .06); }
-.page--map .ac-row[aria-pressed="true"] { background: rgba(232, 116, 59, .1); }
-.page--map .ac-row__cs { color: var(--ink); }
-.page--map .ac-row__type { color: var(--ink-2); }
-.page--map .ac-row__fl { color: var(--ink-3); }
+/* Yakınlaştırma: panelin solunda, altta */
+.map-zoom {
+  position: absolute; right: calc(var(--panel-w) + var(--gap) * 2); bottom: 34px; z-index: 600;
+  display: flex; flex-direction: column; border-radius: var(--r-md); overflow: hidden;
+}
+.map-zoom button { width: 44px; height: 44px; border: 0; background: transparent; color: var(--text); font-size: 20px; cursor: pointer; }
+.map-zoom button + button { border-top: 1px solid var(--line); }
+.map-zoom button:hover { background: rgba(79, 209, 255, .08); color: var(--accent); }
+
+/* Uçak katmanı: tek canvas (map.js); renkler app.css'teki --k-* değişkenlerinden */
+.ac-canvas { position: absolute; left: 0; top: 0; z-index: 450; pointer-events: none; transform-origin: 0 0; }
+.ac-canvas--zoom { transition: transform .25s cubic-bezier(0, 0, .25, 1); }
+.map--hit, .map--hit .leaflet-interactive { cursor: pointer; }
+.map-tip {
+  position: absolute; left: 0; top: 0; z-index: 650; pointer-events: none; white-space: nowrap;
+  padding: 6px 10px; border-radius: var(--r-sm); font-family: var(--font-mono); font-size: 12px; color: var(--text);
+}
+.map-tip[hidden] { display: none; }
+
+/* Tür açıklaması: sol altta tek cam şerit, düğmelerle aç/kapa */
+.legend {
+  position: absolute; left: var(--gap); bottom: 34px; z-index: 600;
+  max-width: calc(100% - var(--panel-w) - var(--gap) * 3 - 64px);
+  display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; border-radius: 18px;
+}
+.legend:empty { display: none; }
+.legend__item {
+  display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 11px; cursor: pointer;
+  border-radius: 999px; border: 0; background: transparent; color: var(--text-body); font-size: 13px;
+  transition: background-color .2s var(--ease), opacity .2s var(--ease);
+}
+.legend__item:hover { background: rgba(230, 241, 245, .06); }
+.legend__item[aria-pressed="false"] { opacity: .45; }
+.legend__item[aria-pressed="false"] .legend__dot { background: transparent; }
+.legend__dot { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--kc); background: var(--kc); }
+.legend__count { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+[data-kind="airliner"] { --kc: var(--k-airliner); } [data-kind="cargo"] { --kc: var(--k-cargo); }
+[data-kind="military"] { --kc: var(--k-military); } [data-kind="ga"] { --kc: var(--k-ga); }
+[data-kind="heli"] { --kc: var(--k-heli); } [data-kind="ground"] { --kc: var(--k-ground); }
+[data-kind="fighter"] { --kc: var(--k-fighter); }
 
 /* Haritadaki havalimanı etiketleri (Leaflet tooltip) */
 .leaflet-tooltip.ap-label {
-  padding: 3px 8px; border-radius: 3px; border: 1px solid rgba(232, 116, 59, .5);
-  background: rgba(10, 13, 17, .94); color: #fff; box-shadow: 0 6px 16px rgba(0, 0, 0, .4);
-  font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: .06em;
+  padding: 3px 8px; border-radius: 6px; border: 1px solid var(--accent-dim);
+  background: rgba(5, 9, 15, .92); color: var(--text); box-shadow: 0 6px 16px rgba(2, 8, 16, .5);
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: .06em;
 }
 .leaflet-tooltip.ap-label::before { display: none; }
+.route-left { animation: route-flow 1.4s linear infinite; }
+@keyframes route-flow { to { stroke-dashoffset: -14; } }
 
-/* ---------- Dar ekran: panel haritanın altına iner ---------- */
-@media (max-width: 1100px) {
-  .page--map .map-panel { position: static; width: auto; border: 0; border-top: 1px solid var(--hair); }
-  .page--map .map-top, .page--map .legend { right: 20px; }
-  .page--map .map-zoom { right: 20px; }
+/* ==========================================================================
+   Sağ panel: seçili uçak + görünen uçaklar listesi (içerik eksiksiz)
+   ========================================================================== */
+.map-panel {
+  position: absolute; right: var(--gap); top: var(--gap); bottom: var(--gap); z-index: 700;
+  width: var(--panel-w); padding: 20px 20px 12px; border-radius: var(--r-xl);
+  overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: rgba(230, 241, 245, .14) transparent;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.panel-label {
+  margin: 0; font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: .16em; color: var(--muted);
+}
+.panel-label__count { letter-spacing: .04em; }
+.sel { display: flex; flex-direction: column; gap: 16px; }
+
+/* Boş durum */
+.sel__empty { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 4px 2px 18px;
+  border-bottom: 1px solid var(--line); color: var(--muted); font-size: 14px; line-height: 1.55; }
+.sel__empty p { margin: 0; max-width: 34ch; text-wrap: pretty; }
+.sel__empty-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--accent-soft); color: var(--accent); }
+.sel__empty-title { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -.02em; color: var(--text); }
+
+.sel__body { display: flex; flex-direction: column; gap: 16px; }
+.sel__body[hidden], .sel__empty[hidden] { display: none; }
+.sel__head { display: flex; align-items: center; gap: 8px; }
+.kind-chip {
+  margin-right: auto; display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 11px 5px 9px; border-radius: 999px; background: rgba(230, 241, 245, .06);
+  font-size: 12px; color: var(--text-body);
+}
+.kind-chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--kc, var(--muted)); }
+.sel__close {
+  width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; cursor: pointer;
+  border: 0; background: rgba(230, 241, 245, .06); color: var(--text-body);
+  transition: background-color .2s var(--ease), color .2s var(--ease);
+}
+.sel__close:hover { background: rgba(230, 241, 245, .12); color: var(--text); }
+.sel__title { display: flex; flex-direction: column; gap: 4px; }
+.sel__cs { font-family: var(--font-mono); font-weight: 500; font-size: 30px; line-height: 1.05; letter-spacing: .01em; color: var(--text); overflow-wrap: anywhere; }
+.sel__sub { font-size: 14px; color: var(--muted); }
+.sel__lost { margin: 0; padding: 10px 12px; border-radius: var(--r-md); font-size: 13px; color: var(--warn-text);
+  background: var(--warn-soft); box-shadow: inset 0 0 0 1px var(--warn-line); }
+
+/* Rota */
+.route { padding: 14px 16px; border-radius: var(--r-lg); background: var(--well); display: flex; flex-direction: column; gap: 10px; }
+.route__ends { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
+.route__ap { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 110px; }
+.route__ap--end { text-align: right; align-items: flex-end; }
+.route__code { font-family: var(--font-mono); font-weight: 500; font-size: 22px; line-height: 1; color: var(--text); }
+.route__city { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.route__track { position: relative; height: 22px; }
+.route__line { position: absolute; left: 0; right: 0; top: 10px; height: 2px; border-radius: 2px;
+  background: repeating-linear-gradient(90deg, rgba(230, 241, 245, .35) 0 6px, transparent 6px 11px); }
+.route__fill { position: absolute; left: 0; top: 0; bottom: 0; width: var(--f, 0%); background: var(--route-flown); border-radius: 2px; }
+.route__plane { position: absolute; top: 2px; left: var(--f, 0%); transform: translateX(-50%); color: var(--accent); }
+.route__meta { margin: 0; font-family: var(--font-mono); font-size: 12px; color: var(--text-body); }
+.route__note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--warn-text); }
+.route-msg { margin: 0; padding: 12px 14px; border-radius: var(--r-md); font-size: 13px; color: var(--muted); background: var(--well); }
+
+/* Fotoğraf (Planespotters.net) */
+.sel__photo { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.sel__photo-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--r-lg); background: var(--well); }
+.sel__photo-link { position: absolute; inset: 0; display: block; }
+.sel__photo-link img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s var(--ease); }
+.sel__photo-link:hover img { transform: scale(1.03); }
+.sel__photo-link:focus-visible { outline-offset: -2px; }
+.sel__photo-empty {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 16px; text-align: center; font-size: 12px; color: var(--muted);
+  background-color: #0B141E;
+  background-image: linear-gradient(rgba(79, 209, 255, .08) 1px, transparent 1px), linear-gradient(90deg, rgba(79, 209, 255, .08) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.sel__photo-sketch { color: var(--accent-dim); }
+.sel__credit { font-size: 12px; color: var(--muted); }
+.sel__credit a { color: var(--text-body); }
+.sel__credit a:hover { color: var(--accent-hover); }
+.skeleton {
+  position: absolute; inset: 0; background-color: #0B141E;
+  background-image: linear-gradient(100deg, transparent 30%, rgba(79, 209, 255, .08) 50%, transparent 70%);
+  background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite;
 }
 
-@media (max-width: 640px) {
-  .page--map .map-top { left: 12px; right: 12px; top: 12px; flex-wrap: wrap; gap: 8px; }
-  .page--map .map-search { flex-basis: 100%; height: 46px; }
-  .page--map .map-live { height: 34px; padding: 0 12px; font-size: 11px; }
-  .page--map .legend { left: 12px; right: 12px; top: 112px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
-  .page--map .legend::-webkit-scrollbar { display: none; }
-  .page--map .legend__item { flex-shrink: 0; }
-  .page--map .map-info { display: none; }
-}
-/* Uzaktan bakınca dünyanın dışında kalan alan, koyu harita zemininin rengiyle */
-.page--map .leaflet-container, .page--map .map { background: #14161A; }
+/* Değerler */
+.sel__grid { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.sel__grid > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 10px 12px; border-radius: var(--r-md); background: var(--well); }
+.sel__grid dt { font-size: 11.5px; color: var(--muted); }
+.sel__grid dd { margin: 0; font-family: var(--font-mono); font-size: 15px; color: var(--text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.sel__spark { display: flex; flex-direction: column; gap: 8px; }
+.sel__spark .tile__label { color: var(--muted); }
+.sel__spark svg { overflow: visible; }
 
-/* Radarı yenile */
-.map-refresh {
-  flex-shrink: 0; width: 48px; height: 48px; display: grid; place-items: center; cursor: pointer;
-  border-radius: var(--r); background: rgba(10, 13, 17, .92); border: 1px solid var(--hair); color: var(--ink-2);
-  box-shadow: 0 6px 18px rgba(4, 5, 8, .4); transition: color .15s ease, border-color .15s ease;
+/* Görünen uçaklar listesi */
+.ac-list-wrap { display: flex; flex-direction: column; gap: 6px; flex: 1 0 240px; min-height: 240px; padding-top: 4px; border-top: 1px solid var(--line); }
+.ac-list-wrap .panel-label { padding-top: 12px; }
+.ac-list { overflow-y: auto; min-height: 0; flex: 1 1 auto; margin: 0 -8px; padding: 0 8px;
+  scrollbar-width: thin; scrollbar-color: rgba(230, 241, 245, .14) transparent; }
+.ac-row {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 10px;
+  border-radius: var(--r-md); border: 0; background: transparent; cursor: pointer; text-align: left;
+  transition: background-color .15s var(--ease);
 }
-.map-refresh:hover { color: var(--accent); border-color: rgba(232, 116, 59, .5); }
-.map-refresh.is-spinning svg { animation: spin .8s linear infinite; }
-@media (max-width: 640px) { .map-refresh { width: 34px; height: 34px; } }
+.ac-row:hover { background: rgba(230, 241, 245, .05); }
+.ac-row[aria-pressed="true"] { background: var(--accent-soft); }
+.ac-row__cs { width: 84px; flex-shrink: 0; font-family: var(--font-mono); font-size: 13.5px; color: var(--text); }
+.ac-row[data-kind] .ac-row__cs { border-left: 2px solid var(--kc); padding-left: 8px; }
+.ac-row__type { flex: 1; min-width: 0; font-size: 13px; color: var(--text-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-row__fl { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ac-list__empty { padding: 8px 12px; margin: 0; }
 
-/* ---------- Açılış: teknik çizim kâğıdı → canlı harita ---------- */
+/* ---------- Açılış: radar ızgarası → canlı harita ---------- */
 .map-boot { position: absolute; inset: 0; z-index: 640; pointer-events: none; overflow: hidden; }
 .map-boot__paper {
   position: absolute; inset: 0;
-  background: radial-gradient(120% 90% at 50% 45%, #1C242E 0%, #151B22 45%, #0A0D11 100%);
-  clip-path: inset(0 0 0 0);
-  transition: clip-path 1.1s cubic-bezier(.77, 0, .175, 1);
+  background: radial-gradient(120% 90% at 50% 45%, #0E1A27 0%, #0A121B 50%, #05090F 100%);
+  clip-path: inset(0 0 0 0); transition: clip-path 1.1s cubic-bezier(.77, 0, .175, 1);
 }
 .map-boot.is-open .map-boot__paper { clip-path: inset(0 0 0 100%); }
-/* Çizgi, kâğıdın kırpma kenarıyla aynı eğriyle soldan sağa ilerler */
 .map-boot__bar { position: absolute; inset: 0; transform: translate3d(0, 0, 0); transition: transform 1.1s cubic-bezier(.77, 0, .175, 1); }
 .map-boot.is-open .map-boot__bar { transform: translate3d(100%, 0, 0); }
 .map-boot__grid {
   position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(236, 232, 224, .2) 1px, transparent 1px), linear-gradient(90deg, rgba(236, 232, 224, .2) 1px, transparent 1px),
-    linear-gradient(rgba(236, 232, 224, .1) 1px, transparent 1px), linear-gradient(90deg, rgba(236, 232, 224, .1) 1px, transparent 1px);
+    linear-gradient(rgba(79, 209, 255, .12) 1px, transparent 1px), linear-gradient(90deg, rgba(79, 209, 255, .12) 1px, transparent 1px),
+    linear-gradient(rgba(79, 209, 255, .05) 1px, transparent 1px), linear-gradient(90deg, rgba(79, 209, 255, .05) 1px, transparent 1px);
   background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
 }
 .map-boot__text {
-  position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -50%);
-  font-family: var(--font-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: rgba(236, 232, 224, .85);
+  position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -50%); white-space: nowrap;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent);
 }
 .map-boot__wipe {
   position: absolute; top: 0; bottom: 0; left: 0; width: 2px; opacity: 0;
-  background: linear-gradient(180deg, transparent, #FFD9C2 18%, #fff 50%, #FFD9C2 82%, transparent);
-  box-shadow: 0 0 18px 4px rgba(232, 116, 59, .55);
+  background: linear-gradient(180deg, transparent, #BFF0FF 18%, #fff 50%, #BFF0FF 82%, transparent);
+  box-shadow: 0 0 18px 4px rgba(79, 209, 255, .55);
 }
 .map-boot.is-open .map-boot__wipe { opacity: 1; }
 
-/* Fotoğrafı olmayan uçak: kâğıt üzerinde uçak taslağı */
-.page--map .sel__photo-empty {
-  flex-direction: column; gap: 10px; color: rgba(236, 232, 224, .8);
-  background-color: #151B22;
-  background-image:
-    linear-gradient(rgba(236, 232, 224, .16) 1px, transparent 1px), linear-gradient(90deg, rgba(236, 232, 224, .16) 1px, transparent 1px);
-  background-size: 20px 20px;
-  font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em;
+/* ---------- Duyarlı düzen ---------- */
+/* Menü ortada; dar masaüstünde sol üst kontroller ve panel menünün altından başlar */
+@media (max-width: 1279px) {
+  .map-panel { top: 78px; }
 }
-.sel__photo-sketch { color: #F0ECE6; }
-
-/* Rota: kalan kısmın kesikleri varışa doğru akar */
-.route-left { animation: route-flow 1.4s linear infinite; }
-@keyframes route-flow { to { stroke-dashoffset: -14; } }
+@media (max-width: 1199px) {
+  .map-top { top: 78px; }
+  .map-info { top: 182px; }
+}
+/* Tablet ve telefon: harita üstte, panel altta akışta */
+@media (max-width: 1100px) {
+  .page--map { height: auto; overflow: visible; }
+  .map-area { position: relative; inset: auto; height: 72vh; height: 72svh; min-height: 440px; }
+  .map-panel { position: static; width: auto; margin: 12px; border-radius: var(--r-xl); overflow: visible; }
+  .ac-list { max-height: 50vh; }
+  .map-zoom { right: var(--gap); }
+  .legend { max-width: calc(100% - var(--gap) * 2 - 64px); }
+}
+@media (max-width: 640px) {
+  .page--map { --gap: 12px; }
+  .map-top { left: 12px; right: 12px; top: 72px; width: auto; gap: 8px; }
+  .map-live { flex: 1 1 auto; height: 36px; padding: 0 12px; font-size: 11px; }
+  .map-refresh { width: 36px; height: 36px; }
+  .map-info { display: none; }
+  .legend { left: 12px; right: 12px; max-width: none; bottom: 48px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .legend::-webkit-scrollbar { display: none; }
+  .legend__item { flex-shrink: 0; }
+  .map-zoom { display: none; }
+  .map-panel { margin: 8px; padding: 18px 16px 10px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .map-boot { transition: opacity .3s ease; }
@@ -196,14 +297,10 @@
   .map-boot.is-open { opacity: 0; }
   .map-boot__paper, .map-boot__bar { transition: none; }
   .map-boot.is-open .map-boot__paper { clip-path: none; }
-  .route-left { animation: none; }
+  .route-left, .skeleton { animation: none; }
 }
-
-/* Fotoğraf yüklenirken: aynı teknik çizim kâğıdı, üzerinden ışık geçer */
-.page--map .sel__photo-frame .skeleton {
-  background-color: #151B22;
-  background-image:
-    linear-gradient(100deg, transparent 30%, rgba(236, 232, 224, .12) 50%, transparent 70%),
-    linear-gradient(rgba(236, 232, 224, .16) 1px, transparent 1px), linear-gradient(90deg, rgba(236, 232, 224, .16) 1px, transparent 1px);
-  background-size: 200% 100%, 20px 20px, 20px 20px;
+@media (prefers-reduced-transparency: reduce) {
+  .map-search, .map-live, .map-refresh, .map-zoom, .map-info, .map-msg, .map-tip, .legend, .map-panel {
+    background: var(--surface-solid); -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
 }

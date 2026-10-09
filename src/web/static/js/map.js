@@ -157,7 +157,7 @@
       g.lineWidth = 2.2;
       g.strokeStyle = outline;
       g.stroke(path);
-      g.fillStyle = sel ? selColor : cssVar(`--k-${k.key}`, "#e8743b");
+      g.fillStyle = sel ? selColor : cssVar(`--k-${k.key}`, "#4FD1FF");
       g.fill(path);
       return c;
     }));
@@ -237,13 +237,16 @@
       ctx.stroke();
       drawIcon(sprites[sel.kind][1], sel.trk, x, y, 1.25);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.font = `700 12px ${cssVar("--font-mono", "monospace")}`;
+      ctx.font = `500 12px ${cssVar("--font-mono", "monospace")}`;
       ctx.textBaseline = "middle";
       const t = callsign(sel), tw = ctx.measureText(t).width;
       ctx.fillStyle = cssVar("--k-selected", "#ffffff");
-      ctx.fillRect(x + half + 10, y - 9, tw + 10, 18);
-      ctx.fillStyle = "#fff";
-      ctx.fillText(t, x + half + 15, y);
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x + half + 10, y - 10, tw + 14, 20, 6);
+      else ctx.rect(x + half + 10, y - 10, tw + 14, 20);
+      ctx.fill();
+      ctx.fillStyle = cssVar("--bg", "#05090F");   // açık etiket üstünde koyu yazı
+      ctx.fillText(t, x + half + 17, y + 0.5);
     }
   }
 
@@ -641,14 +644,15 @@
     routeLayer.clearLayers();
     const line = (a, b, style) => greatCircle(a, b).forEach((seg) => L.polyline(seg, { interactive: false, ...style }).addTo(routeLayer));
     if (plausible) {
-      line(o, pos, { color: cssVar("--route-flown", "#E8743B"), weight: 3, opacity: 0.95 });
+      line(o, pos, { color: cssVar("--route-flown", "#4FD1FF"), weight: 3, opacity: 0.95 });
       // Kalan kısım: kesikler varışa doğru akar (yön)
       line(pos, t, { color: cssVar("--route-left", "#FFFFFF"), weight: 2, opacity: 0.85, dashArray: "6 8", className: "route-left" });
     } else {
-      line(o, t, { color: "#A7A39D", weight: 2, opacity: 0.5, dashArray: "4 8" });
+      line(o, t, { color: cssVar("--muted", "#8FA2B2"), weight: 2, opacity: 0.5, dashArray: "4 8" });
     }
     for (const [ap, at] of [[d.origin, o], [d.destination, t]]) {
-      L.circleMarker(at, { radius: 5, color: "#E8743B", weight: 2, fillColor: "#0B0D10", fillOpacity: 1, interactive: false })
+      L.circleMarker(at, { radius: 5, color: cssVar("--route-flown", "#4FD1FF"), weight: 2, fillColor: cssVar("--bg", "#05090F"),
+                           fillOpacity: 1, interactive: false })
         .bindTooltip(apCode(ap), { permanent: true, direction: "top", offset: [0, -6], className: "ap-label" })
         .addTo(routeLayer);
     }
@@ -834,16 +838,14 @@
     state.liveState = kind;
     $("live").dataset.state = kind;
     $("live-text").textContent = text;
-    $("nav-live").dataset.state = kind;
   }
   function renderLive() {
     const d = state.data;
     if (!d) return;
-    $("nav-live-count").textContent = GR.fmtNum(d.count);
     const age = Math.max(0, Math.round(Date.now() / 1000 - d.time));
     const stale = age > 60;
     setLive(stale ? "stale" : "ok",
-            `${stale ? "GECİKMELİ" : "CANLI"} · ${GR.fmtNum(d.count)} uçak · ${GR.fmtNum(age)} sn önce`);
+            `${stale ? "Gecikmeli" : "Canlı"} ·${GR.fmtNum(d.count)} uçak · ${GR.fmtNum(age)} sn önce`);
   }
   function renderInfo() {
     $("map-info").textContent = `Ekranda ${GR.fmtNum(visibleCount)} uçak · adsb.lol`;

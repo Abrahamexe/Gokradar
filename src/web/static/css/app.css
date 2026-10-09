@@ -254,7 +254,8 @@ body.app::after {
 /* ==========================================================================
    Gecikme tahmini ve uçak tanıma: solda girdi kartı, sağda sonuç kartı
    ========================================================================== */
-.split { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 20px; align-items: start; }
+/* İki kart aynı yükseklikte: üst ve alt kenarlar hizalı */
+.split { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 20px; align-items: stretch; }
 .split__side, .split__main { min-width: 0; }
 .split__main { display: flex; flex-direction: column; gap: 22px; padding: 26px 28px 28px; }
 .result__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -263,6 +264,7 @@ body.app::after {
 
 /* Form */
 .delay-form { display: flex; flex-direction: column; gap: 18px; padding: 24px; }
+.delay-form > .small:last-child { margin-top: auto; }   /* açıklama kartın altına yaslanır */
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; }
 
 /* Gösterge */

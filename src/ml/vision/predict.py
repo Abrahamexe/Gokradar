@@ -17,6 +17,7 @@ class AircraftClassifier:
         ckpt = torch.load(path, map_location=self.device, weights_only=True)
         self.classes: list[str] = ckpt["classes"]
         self.version: str = ckpt["version"]
+        self.arch: str = ckpt["arch"]
         self.model = build_model(ckpt["arch"], len(self.classes), pretrained=False)
         self.model.load_state_dict(ckpt["state_dict"])
         self.model.to(self.device).eval()

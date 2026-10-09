@@ -21,6 +21,7 @@ BTS_DIR = RAW_DIR / "bts"
 WEATHER_DIR = RAW_DIR / "weather"
 AIRCRAFT_DIR = RAW_DIR / "aircraft"
 FGVC_DIR = RAW_DIR / "fgvc"
+COMMONS_DIR = RAW_DIR / "commons"   # Wikimedia Commons'tan toplanan güncel tip fotoğrafları
 PROCESSED_DIR = DATA_DIR / "processed"
 UPLOADS_DIR = DATA_DIR / "uploads"
 MODELS_DIR = BASE_DIR / "models"
@@ -79,6 +80,7 @@ CONFUSABLE_FAMILIES = [
 MAX_UPLOAD_MB = 10                  # classify-aircraft yükleme sınırı
 ALLOWED_IMAGE_FORMATS = {"JPEG": {".jpg", ".jpeg"}, "PNG": {".png"}}
 METAR_CACHE_TTL_S = 300             # aynı istasyonun METAR'ı en fazla 5 dk'da bir çekilir
+NAS_POLL_S = 300                    # FAA NAS Status yenileme aralığı (durum değişince DB'ye kaydedilir)
 
 # İstemci (IP) başına dakikadaki en fazla istek. Yazma yapan ve dış servislere giden endpoint'ler.
 RATE_LIMITS_PER_MIN = {"predict": 30, "classify": 10, "route": 90, "aircraft": 120}

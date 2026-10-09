@@ -1,7 +1,10 @@
 """Fotoğraf sınıflandırma — eğitim, değerlendirme ve tahminin paylaştığı parçalar."""
 import numpy as np
+import pandas as pd
 import torch
+from PIL import Image
 from torch import nn
+from torch.utils.data import Dataset
 from torchvision import models, transforms
 from torchvision.datasets import FGVCAircraft
 
@@ -15,7 +18,11 @@ FGVC_BANNER_PX = 20  # FGVC görüntülerinin altındaki telif şeridi (yalnızc
 MODEL_DIR = config.MODELS_DIR / "vision"
 MODEL_PATH = MODEL_DIR / "aircraft_classifier.pt"
 
-ARCHS = ("efficientnet_b0", "resnet50")
+ARCHS = ("convnext_tiny", "efficientnet_b0", "resnet50")
+# Veri seti sürümü: seçim (select) sonuçları yalnızca aynı veriyle eğitilmiş final için geçerli
+DATASET_VERSION = "fgvc+commons-v1"
+COMMONS_MANIFEST = config.COMMONS_DIR / "manifest.csv"
+COMMONS_IMAGES = config.COMMONS_DIR / "images"
 
 
 class CropBanner:
@@ -51,10 +58,53 @@ def eval_transform(crop_banner: bool = True):
     ])
 
 
-def fgvc_dataset(split: str, train: bool) -> FGVCAircraft:
-    """split: train, val, trainval, test. Aile (family) düzeyi, 70 sınıf."""
-    return FGVCAircraft(root=str(config.FGVC_DIR), split=split, annotation_level="family",
-                        transform=train_transform() if train else eval_transform(), download=False)
+class AircraftDataset(Dataset):
+    """FGVC-Aircraft (aile düzeyi, 70 sınıf) + Wikimedia Commons'tan güncel tipler.
+
+    split: train, val, trainval, test. Commons manifest'i yoksa yalnızca FGVC kullanılır.
+    FGVC görüntülerinin altındaki telif şeridi kesilir; Commons görüntülerinde şerit yoktur.
+    """
+    def __init__(self, split: str, train: bool):
+        fgvc = FGVCAircraft(root=str(config.FGVC_DIR), split=split, annotation_level="family",
+                            download=False)
+        samples = [(path, fgvc.classes[y], True) for path, y in zip(fgvc._image_files, fgvc._labels)]
+        if COMMONS_MANIFEST.exists():
+            df = pd.read_csv(COMMONS_MANIFEST, keep_default_na=False)
+            wanted = ("train", "val") if split == "trainval" else (split,)
+            df = df[df["split"].isin(wanted)]
+            samples += [(str(COMMONS_IMAGES / f"{i}.jpg"), label, False)
+                        for i, label in zip(df["id"], df["label"])]
+        # Sınıf listesi bölümden bağımsız olsun diye tüm manifest'ten kurulur
+        self.classes: list[str] = all_classes()
+        index = {c: i for i, c in enumerate(self.classes)}
+        self.paths = [p for p, _, _ in samples]
+        self.labels = [index[c] for _, c, _ in samples]
+        self.from_fgvc = [f for _, _, f in samples]
+        make = train_transform if train else eval_transform
+        self.tf_fgvc, self.tf_plain = make(crop_banner=True), make(crop_banner=False)
+
+    def __len__(self) -> int:
+        return len(self.paths)
+
+    def __getitem__(self, i):
+        img = Image.open(self.paths[i]).convert("RGB")
+        tf = self.tf_fgvc if self.from_fgvc[i] else self.tf_plain
+        return tf(img), self.labels[i]
+
+
+def all_classes() -> list[str]:
+    """FGVC aileleri + Commons'ta en az bir bölüme atanmış yeni aileler (alfabetik)."""
+    fgvc = FGVCAircraft(root=str(config.FGVC_DIR), split="test", annotation_level="family",
+                        download=False).classes
+    extra = set()
+    if COMMONS_MANIFEST.exists():
+        df = pd.read_csv(COMMONS_MANIFEST, keep_default_na=False)
+        extra = set(df.loc[df["split"] != "", "label"])
+    return sorted(set(fgvc) | extra)
+
+
+def aircraft_dataset(split: str, train: bool) -> AircraftDataset:
+    return AircraftDataset(split, train)
 
 
 def class_weights(labels, num_classes: int) -> torch.Tensor:
@@ -65,7 +115,11 @@ def class_weights(labels, num_classes: int) -> torch.Tensor:
 
 
 def build_model(arch: str, num_classes: int, pretrained: bool = True) -> nn.Module:
-    if arch == "efficientnet_b0":
+    if arch == "convnext_tiny":
+        weights = models.ConvNeXt_Tiny_Weights.IMAGENET1K_V1 if pretrained else None
+        model = models.convnext_tiny(weights=weights)
+        model.classifier[2] = nn.Linear(model.classifier[2].in_features, num_classes)
+    elif arch == "efficientnet_b0":
         weights = models.EfficientNet_B0_Weights.IMAGENET1K_V1 if pretrained else None
         model = models.efficientnet_b0(weights=weights)
         model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
@@ -80,6 +134,8 @@ def build_model(arch: str, num_classes: int, pretrained: bool = True) -> nn.Modu
 
 def head_and_last_blocks(model: nn.Module, arch: str) -> tuple[list[nn.Module], list[nn.Module]]:
     """(sınıflandırıcı başlık, ince ayarda açılacak son bloklar)."""
+    if arch == "convnext_tiny":
+        return [model.classifier], [model.features]       # tüm gövde (LayerNorm; BN yok)
     if arch == "efficientnet_b0":
         return [model.classifier], [model.features[5:]]   # MBConv 5-7 + son konv
     return [model.fc], [model.layer3, model.layer4]

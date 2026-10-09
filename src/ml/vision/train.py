@@ -6,8 +6,7 @@
 Kayıp: sınıf ağırlıklı cross-entropy (ters frekans).
 
 Kullanım (proje kökünden):
-  python -m src.ml.vision.train select --arch efficientnet_b0   # train'de eğit, val'de seç
-  python -m src.ml.vision.train select --arch resnet50
+  python -m src.ml.vision.train select --arch convnext_tiny   # train'de eğit, val'de seç
   python -m src.ml.vision.train final    # seçilen mimari + epoch ile train+val'de yeniden eğit
 Test seti burada hiç kullanılmaz (bkz. evaluate.py).
 
@@ -32,10 +31,10 @@ import torch  # noqa: E402
 from torch import nn  # noqa: E402
 from torch.utils.data import DataLoader  # noqa: E402
 
-from src.ml.vision.common import (ARCHS, IMAGENET_MEAN, IMAGENET_STD, IMG_SIZE,  # noqa: E402
-                                  MODEL_DIR, MODEL_PATH, build_model, class_weights,
-                                  fgvc_dataset, head_and_last_blocks, macro_accuracy,
-                                  topk_correct)
+from src.ml.vision.common import (ARCHS, DATASET_VERSION, IMAGENET_MEAN,  # noqa: E402
+                                  IMAGENET_STD, IMG_SIZE, MODEL_DIR, MODEL_PATH,
+                                  aircraft_dataset, build_model, class_weights,
+                                  head_and_last_blocks, macro_accuracy, topk_correct)
 
 HPARAMS = dict(
     head_epochs=4,          # aşama 1
@@ -182,7 +181,7 @@ def train(arch: str, train_ds, total_epochs: int, val_ds=None, run_name: str | N
     seed_everything(HPARAMS["seed"])
     num_classes = len(train_ds.classes)
     model = build_model(arch, num_classes).to(DEVICE).to(memory_format=torch.channels_last)
-    weights = class_weights(train_ds._labels, num_classes).to(DEVICE)
+    weights = class_weights(train_ds.labels, num_classes).to(DEVICE)
     criterion = nn.CrossEntropyLoss(weight=weights, label_smoothing=HPARAMS["label_smoothing"])
     scaler = torch.amp.GradScaler(enabled=DEVICE.type == "cuda")
     train_dl = loader(train_ds, shuffle=True)
@@ -246,16 +245,17 @@ def clear_checkpoint(run_name: str) -> None:
 
 
 def cmd_select(arch: str, resume: bool = False) -> None:
-    train_ds, val_ds = fgvc_dataset("train", train=True), fgvc_dataset("val", train=False)
+    train_ds, val_ds = aircraft_dataset("train", train=True), aircraft_dataset("val", train=False)
     total = HPARAMS["head_epochs"] + HPARAMS["ft_epochs"]
     run_name = f"select_{arch}"
     print(f"[select] {arch} | train={len(train_ds)} val={len(val_ds)} | {total} epoch | {DEVICE}")
     _, history = train(arch, train_ds, total, val_ds, run_name=run_name, resume=resume,
-                       run_meta={"mode": "select", "img_size": IMG_SIZE})
+                       run_meta={"mode": "select", "img_size": IMG_SIZE, "dataset": DATASET_VERSION})
     best = max(history, key=lambda r: (r["val_macro_acc"], r["val_top1"]))
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     selection_path(arch).write_text(json.dumps(
-        {"arch": arch, "hparams": HPARAMS, "img_size": IMG_SIZE, "best": best, "history": history},
+        {"arch": arch, "dataset": DATASET_VERSION, "classes": train_ds.classes, "hparams": HPARAMS,
+         "img_size": IMG_SIZE, "best": best, "history": history},
         indent=2), encoding="utf-8")
     clear_checkpoint(run_name)
     print(f"En iyi epoch: {best['epoch']} | val top1={best['val_top1']:.4f} "
@@ -265,17 +265,19 @@ def cmd_select(arch: str, resume: bool = False) -> None:
 def cmd_final(resume: bool = False) -> None:
     selections = [json.loads(selection_path(a).read_text(encoding="utf-8"))
                   for a in ARCHS if selection_path(a).exists()]
+    # Başka bir veri setiyle yapılmış seçimler (ör. yalnız FGVC) karşılaştırılamaz
+    selections = [s for s in selections if s.get("dataset") == DATASET_VERSION]
     if not selections:
-        sys.exit("Önce `select` çalıştırın.")
+        sys.exit(f"Önce bu veri setiyle ({DATASET_VERSION}) `select` çalıştırın.")
     chosen = max(selections, key=lambda s: (s["best"]["val_macro_acc"], s["best"]["val_top1"]))
     arch, epochs = chosen["arch"], chosen["best"]["epoch"]
     if epochs <= HPARAMS["head_epochs"]:
         sys.exit("En iyi epoch aşama 1'de; ince ayar ayarlarını gözden geçirin.")
-    trainval = fgvc_dataset("trainval", train=True)
+    trainval = aircraft_dataset("trainval", train=True)
     print(f"[final] {arch} | train+val={len(trainval)} | {epochs} epoch "
           f"(val seçimi: macro={chosen['best']['val_macro_acc']:.4f}) | {DEVICE}")
     model, history = train(arch, trainval, epochs, run_name="final", resume=resume,
-                           run_meta={"mode": "final", "img_size": IMG_SIZE,
+                           run_meta={"mode": "final", "img_size": IMG_SIZE, "dataset": DATASET_VERSION,
                                      "val_selection": chosen["best"]})
 
     version = datetime.now(timezone.utc).strftime(f"{arch}-%Y%m%d-%H%M%S")
@@ -283,7 +285,7 @@ def cmd_final(resume: bool = False) -> None:
         "version": version, "arch": arch, "classes": trainval.classes,
         "state_dict": model.state_dict(), "img_size": IMG_SIZE,
         "mean": IMAGENET_MEAN, "std": IMAGENET_STD, "epochs": epochs,
-        "trained_on": "trainval", "hparams": HPARAMS, "history": history,
+        "trained_on": "trainval", "dataset": DATASET_VERSION, "hparams": HPARAMS, "history": history,
         "val_selection": chosen["best"],
     }, MODEL_PATH)
     clear_checkpoint("final")

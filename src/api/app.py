@@ -26,19 +26,18 @@ from src.web.routes import web  # noqa: E402
 
 LOG_DIR = config.BASE_DIR / "logs"
 STATIC_DIR = Path(web.static_folder)
-LONG_CACHED_DIRS = ("/static/models/", "/static/env/", "/static/img/")   # büyük, nadiren değişen dosyalar
+LONG_CACHED_DIRS = ("/static/seq/", "/static/img/")   # büyük, nadiren değişen dosyalar
 
 
 def build_csp(nonce: str) -> str:
     """Sayfa yalnızca bilinen kaynaklardan kod/görsel yükleyebilir; inline script'ler nonce ister."""
     return "; ".join([
         "default-src 'self'",
-        f"script-src 'self' 'nonce-{nonce}' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net",
+        f"script-src 'self' 'nonce-{nonce}' https://unpkg.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: blob: https://tiles.stadiamaps.com https://*.plnspttrs.net",
-        "connect-src 'self' https://api.planespotters.net https://cdn.jsdelivr.net",
-        "worker-src 'self' blob:",
+        "connect-src 'self' https://api.planespotters.net",
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",

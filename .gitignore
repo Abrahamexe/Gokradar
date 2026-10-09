@@ -49,9 +49,6 @@ logs/
 *.log
 *.tmp
 
-# ── Node (tools/build_edges.mjs için) ─────────────────────────────
-node_modules/
-
 # ── IDE / OS / araçlar ────────────────────────────────────────────
 .vscode/
 .idea/

@@ -227,7 +227,8 @@ src/
 ├── features/             # gecikme özellikleri ve hava durumu eşleme
 ├── ingest/               # BTS, METAR, uçak DB, FGVC, Neon'a toplu yükleme
 └── db/                   # bağlantı, tablolar (SQLAlchemy), depo sınıfı
-tools/build_edges.mjs     # 3B modelin teknik çizim kenarlarını önceden hesaplar
+tools/blender/scene.py    # ana sayfa sahnesi (Blender Cycles): 787, ışık, kamera yolu
+tools/encode_frames.py    # render karelerini masaüstü/mobil WebP dizisine çevirir
 ```
 
 ## Veri kaynakları, atıflar ve lisans

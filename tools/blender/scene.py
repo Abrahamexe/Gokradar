@@ -5,7 +5,7 @@ blender -b --python scene.py -- --anim 1 --pct 100 --samples 256   # final: fram
 Sahneyi kurar, scene.blend olarak kaydeder; --still verilirse o istasyonu render alır.
 
 Girdiler bu betikle aynı klasörde olmalı:
-  b787.glb  → src/web/static/models/b787.glb
+  b787.glb  → repoda bu klasörde (siteye sunulmaz, yalnızca sahne girdisi)
   sky.hdr   → Poly Haven "qwantani_dusk_2_puresky" 4K HDR (CC0)
 Kareler sonra: python tools/encode_frames.py <klasör>/frames
 Blender 4.5 LTS ile denendi (Cycles, OptiX).

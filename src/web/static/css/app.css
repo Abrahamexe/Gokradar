@@ -464,6 +464,14 @@ button, input, select { font: inherit; color: inherit; }
 .metar-raw { display: block; font-family: var(--font-mono); font-size: 12px; color: var(--muted-2); overflow-wrap: anywhere; }
 .notes { margin: 0; padding: 0 0 0 18px; font-size: 13px; line-height: 1.6; color: var(--muted); }
 .notes li + li { margin-top: 4px; }
+.nas-alert {
+  border: 1px solid var(--amber); border-left-width: 3px; border-radius: 6px;
+  padding: 12px 14px; font-size: 13px; line-height: 1.55;
+}
+.nas-alert__title { margin: 0 0 6px; color: var(--amber); font-weight: 600; }
+.nas-alert ul { margin: 0 0 6px; padding-left: 18px; }
+.nas-alert li { overflow-wrap: anywhere; }
+.nas-alert .small { margin: 0; color: var(--muted); }
 
 /* Yükleme alanı: kesikli kutu yerine vizör köşeleri (ana sayfadaki tanıma çerçevesiyle aynı dil) */
 .dropzone {

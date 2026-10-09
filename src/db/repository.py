@@ -1,11 +1,11 @@
 """API'nin veritabanı işlemleri. Engine dışarıdan verilir (API'de DATABASE_URL_POOLED)."""
-from datetime import date
+from datetime import date, datetime
 
 from sqlalchemy import bindparam, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from src.db.models import Aircraft, DelayPrediction, ImageClassification
+from src.db.models import Aircraft, DelayPrediction, ImageClassification, NasStatusSnapshot
 
 AIRCRAFT_FIELDS = ["icao24", "registration", "typecode", "manufacturer", "model",
                    "operator", "operator_icao", "operator_callsign", "owner", "aircraft_class", "built"]
@@ -69,3 +69,7 @@ class Repository:
             s.add(row)
             s.flush()
             return row.id
+
+    def save_nas_snapshot(self, *, fetched_at: datetime, events: dict, raw_xml: str) -> None:
+        with Session(self.engine) as s, s.begin():
+            s.add(NasStatusSnapshot(fetched_at=fetched_at, events=events, raw_xml=raw_xml))

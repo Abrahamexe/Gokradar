@@ -1,5 +1,6 @@
 """Gecikme tahmini: kalkış, varış, havayolu, tarih ve planlanan saatten
-≥15 dk gecikme olasılığı. Hava durumu verilmezse kalkış havalimanının güncel METAR'ı çekilir.
+≥15 dk gecikme olasılığı. Hava durumu verilmezse kalkış ve varış havalimanlarının güncel
+METAR'ı çekilir.
 """
 from dataclasses import dataclass
 from datetime import date
@@ -9,7 +10,7 @@ import joblib
 import pandas as pd
 
 import config
-from src.features.delay_features import WEATHER
+from src.features.delay_features import DEST_WEATHER_BASE, WEATHER
 from src.services.metar_client import get_metar
 
 MODEL_PATH = config.DELAY_MODEL_DIR / "delay_model.joblib"
@@ -55,7 +56,8 @@ class DelayPredictor:
             raise DelayInputError(f"Geçersiz planlanan saat (HHMM): {crs_dep_time}")
 
     def predict_times(self, origin: str, dest: str, airline: str, flight_date: date,
-                      crs_dep_times: list[int], weather: dict | None = None) -> list[float]:
+                      crs_dep_times: list[int], weather: dict | None = None,
+                      dest_weather: dict | None = None) -> list[float]:
         """Aynı uçuş için birden çok planlanan saatin gecikme olasılığı; model tek çağrıda çalışır."""
         origin, dest, airline = origin.strip().upper(), dest.strip().upper(), airline.strip().upper()
         for t in crs_dep_times:
@@ -63,17 +65,22 @@ class DelayPredictor:
         if not crs_dep_times:
             return []
         base = {"flight_date": pd.Timestamp(flight_date), "airline": airline, "origin": origin,
-                "dest": dest, **{k: (weather or {}).get(k) for k in WEATHER}}
+                "dest": dest, **{k: (weather or {}).get(k) for k in WEATHER},
+                **{f"dest_{k}": (dest_weather or {}).get(k) for k in DEST_WEATHER_BASE}}
         X = self.builder.transform(pd.DataFrame([{**base, "crs_dep_time": t} for t in crs_dep_times]))
         return [float(p) for p in self.model.predict_proba(X)[:, 1]]
 
     def predict(self, origin: str, dest: str, airline: str, flight_date: date,
-                crs_dep_time: int, weather: dict | None = None) -> DelayPrediction:
+                crs_dep_time: int, weather: dict | None = None,
+                dest_weather: dict | None = None) -> DelayPrediction:
         origin, dest, airline = origin.strip().upper(), dest.strip().upper(), airline.strip().upper()
         self._validate(origin, dest, airline, crs_dep_time)   # geçersiz girdi için METAR çekilmez
         if weather is None:
             weather = get_metar(origin)  # canlı METAR; alınamazsa model eksik değerle çalışır
-        proba = self.predict_times(origin, dest, airline, flight_date, [crs_dep_time], weather)[0]
+        if dest_weather is None:
+            dest_weather = get_metar(dest)
+        proba = self.predict_times(origin, dest, airline, flight_date, [crs_dep_time], weather,
+                                   dest_weather)[0]
 
         weather_summary = None if weather is None else {
             k: (v.isoformat() if hasattr(v, "isoformat") else v)

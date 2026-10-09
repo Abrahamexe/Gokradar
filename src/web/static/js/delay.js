@@ -122,10 +122,33 @@
 
     renderProfile(d.time_profile || []);
     renderWeather(d.origin, d.weather);
+    renderNas(d);
 
     const notes = $("r-notes");
     notes.replaceChildren(...(d.notes || []).map((n) => Object.assign(document.createElement("li"), { textContent: n })));
     notes.hidden = !(d.notes && d.notes.length);
+  }
+
+  // FAA'nın anlık durumu (yalnızca bugünkü uçuşlar): olasılığa katılmaz, ayrı uyarı olarak gösterilir
+  function renderNas(d) {
+    const box = $("r-nas");
+    const alerts = d.nas_alerts;
+    const rows = alerts ? [["origin", d.origin, "Kalkış"], ["dest", d.dest, "Varış"]]
+      .flatMap(([key, code, role]) => (alerts[key] || []).map((e) => ({ ...e, code, role }))) : [];
+    box.hidden = !rows.length;
+    if (!rows.length) { box.replaceChildren(); return; }
+    const title = Object.assign(document.createElement("p"), {
+      className: "nas-alert__title", textContent: "FAA canlı durum: bu uçuşu etkileyebilecek olaylar var" });
+    const list = document.createElement("ul");
+    list.append(...rows.map((e) => {
+      const li = document.createElement("li");
+      const head = Object.assign(document.createElement("strong"), { textContent: `${e.role} ${e.code}: ${e.label}` });
+      li.append(head, [e.detail, e.reason].filter(Boolean).length ? ` — ${[e.detail, e.reason].filter(Boolean).join(" · ")}` : "");
+      return li;
+    }));
+    const foot = Object.assign(document.createElement("p"), {
+      className: "small", textContent: "Model bu bilgiyi henüz hesaba katmıyor; gerçek gecikme riski gösterilenden yüksek olabilir." });
+    box.replaceChildren(title, list, foot);
   }
 
   function renderProfile(profile) {

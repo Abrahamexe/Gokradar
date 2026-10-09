@@ -236,19 +236,28 @@ def predict_delay():
         notes.append(f"Havayolu {airline} eğitim verisinde yok; 'OTHER' grubu kullanıldı.")
     days_ahead = (flight_date - date.today()).days
     if abs(days_ahead) > 1:
-        notes.append("Hava durumu kalkış havalimanının güncel METAR'ından alınır; "
+        notes.append("Hava durumu kalkış ve varış havalimanlarının güncel METAR'ından alınır; "
                      f"uçuş {abs(days_ahead)} gün {'sonra' if days_ahead > 0 else 'önce'} olduğu için "
                      "tahmin daha az güvenilirdir.")
     weather = svc.metar.get(origin)
     if weather is None:
         notes.append("Güncel METAR alınamadı; tahmin hava durumu olmadan yapıldı.")
+    dest_weather = svc.metar.get(dest)
+    if dest_weather is None:
+        notes.append(f"{dest} için güncel METAR alınamadı; varış hava durumu kullanılmadı.")
+    # FAA'nın anlık durumu yalnızca bugünkü uçuşlar için anlamlı; olasılığa katılmaz, uyarı olarak döner
+    nas_alerts = None
+    if svc.nas is not None and days_ahead == 0:
+        nas_alerts = {"origin": svc.nas.get(origin), "dest": svc.nas.get(dest)}
 
-    result = predictor.predict(origin, dest, airline, flight_date, dep_time, weather=weather or {})
+    result = predictor.predict(origin, dest, airline, flight_date, dep_time, weather=weather or {},
+                               dest_weather=dest_weather or {})
     weather_out = result.weather or None
     # Aynı rota ve hava durumuyla başka saatler (yalnızca yanıtta; veritabanına kaydedilmez)
     others = [t for t in compare_times if t != dep_time]
     probs = dict(zip(others, predictor.predict_times(origin, dest, airline, flight_date, others,
-                                                     weather=weather or {})))
+                                                     weather=weather or {},
+                                                     dest_weather=dest_weather or {})))
     probs[dep_time] = result.probability
     time_profile = [{
         "dep_time": f"{t // 100:02d}:{t % 100:02d}", "selected": t == dep_time,
@@ -270,6 +279,7 @@ def predict_delay():
         "delay_probability": round(result.probability, 4),
         "is_delayed": bool(result.is_delayed), "threshold": round(result.threshold, 4),
         "weather": weather_out, "notes": notes, "time_profile": time_profile,
+        "nas_alerts": nas_alerts,
         "model_version": result.model_version, "prediction_id": prediction_id,
     })
 

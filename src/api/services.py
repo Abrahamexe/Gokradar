@@ -61,6 +61,7 @@ class Services:
     opensky: object | None             # OpenSkyCache; kimlik yoksa None
     adsb: object | None = None         # AdsbFeed: haritanın dünya geneli canlı verisi
     routes: object | None = None       # RouteLookup: çağrı kodu → kalkış/varış
+    nas: object | None = None          # NasStatusCache: FAA ground stop / gecikme programları
     upload_dir: Path = config.UPLOADS_DIR
     aircraft_lookup: AircraftLookup = field(init=False)
     classifier_lock: threading.Lock = field(default_factory=threading.Lock)
@@ -77,6 +78,7 @@ def build_services() -> Services:
     from src.ml.vision.predict import AircraftClassifier
     from src.services.adsb_feed import AdsbFeed
     from src.services.metar_client import MetarCache
+    from src.services.nas_status import NasStatusCache
     from src.services.route_lookup import RouteLookup
     from src.services.opensky_cache import OpenSkyCache
     from src.services.opensky_client import OpenSkyClient, OpenSkyError
@@ -90,10 +92,10 @@ def build_services() -> Services:
     except OpenSkyError as exc:
         log.warning("OpenSky devre dışı: %s", exc)
         opensky = None
-    svc = Services(delay_predictor=delay, classifier=classifier,
-                   repo=Repository(get_engine(pooled=True)),
+    repo = Repository(get_engine(pooled=True))
+    svc = Services(delay_predictor=delay, classifier=classifier, repo=repo,
                    metar=MetarCache(config.METAR_CACHE_TTL_S), opensky=opensky, adsb=AdsbFeed(),
-                   routes=RouteLookup())
+                   routes=RouteLookup(), nas=NasStatusCache(config.NAS_POLL_S, repo=repo))
     # Havayolu adları tablosu (~5 sn) ilk uçak seçimini bekletmesin
     threading.Thread(target=svc.aircraft_lookup.load_airlines, daemon=True, name="airlines").start()
     return svc

@@ -18,10 +18,20 @@ class MetarError(RuntimeError):
     pass
 
 
+# ABD anakarası dışındaki (Alaska, Hawaii, Karayipler) BTS havalimanları: K öneki almaz
+NON_CONTIGUOUS_ICAO = {
+    "ANC": "PANC", "FAI": "PAFA", "JNU": "PAJN", "KTN": "PAKT", "SIT": "PASI",
+    "HNL": "PHNL", "KOA": "PHKO", "LIH": "PHLI", "OGG": "PHOG", "ITO": "PHTO",
+    "BQN": "TJBQ", "PSE": "TJPS", "SJU": "TJSJ", "STT": "TIST", "STX": "TISX", "GUM": "PGUM",
+}
+
+
 def to_icao(code: str) -> str:
-    """IATA (ATL) → ICAO (KATL). Kapsamdaki havalimanları ABD anakarasında olduğu için K öneki yeterli."""
+    """IATA (ATL) → ICAO (KATL). ABD anakarasında K öneki, diğerleri tablodan."""
     code = code.strip().upper()
-    return f"K{code}" if len(code) == 3 else code
+    if len(code) != 3:
+        return code
+    return NON_CONTIGUOUS_ICAO.get(code, f"K{code}")
 
 
 def _visibility(value) -> float | None:

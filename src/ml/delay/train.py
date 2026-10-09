@@ -1,6 +1,8 @@
 """Gecikme modeli eğitimi: Logistic Regression baseline + LightGBM.
 
-Veri: data/processed/delay_train_*.parquet (export_data.py ile Neon'dan bir kez çekilir).
+Veri: yerel Parquet'ler — bts_flights (load_bts), weather_hourly ve weather_dest_hourly
+(load_weather). Neon'a gidilmez: geçmiş uçuşlar yalnızca eğitimde gerekir ve 12+ aylık veri
+ücretsiz katmanın sınırını zorlar.
 Bölme tarih bazlıdır:
     eğitim  : ilk günler
     doğrulama: testten önceki DELAY_VAL_DAYS gün (erken durdurma + eşik seçimi)
@@ -21,6 +23,7 @@ import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from sklearn.compose import ColumnTransformer  # noqa: E402
 from sklearn.impute import SimpleImputer  # noqa: E402
@@ -33,7 +36,9 @@ from src.features.delay_features import (CATEGORICAL, FEATURES, NUMERIC, ORDINAL
                                          DelayFeatureBuilder, attach_weather)
 from src.ml.delay.evaluate import (best_f1_threshold, compute_metrics, format_table,  # noqa: E402
                                    save_calibration_plot)
-from src.ml.delay.export_data import FLIGHTS_PATH, WEATHER_PATH, export  # noqa: E402
+from src.ingest.load_bts import OUTPUT_PATH as FLIGHTS_PATH  # noqa: E402
+from src.ingest.load_weather import DEST_OUTPUT_PATH as DEST_WEATHER_PATH  # noqa: E402
+from src.ingest.load_weather import OUTPUT_PATH as WEATHER_PATH  # noqa: E402
 
 TARGET = "dep_del15"
 MODEL_PATH = config.DELAY_MODEL_DIR / "delay_model.joblib"
@@ -42,6 +47,7 @@ REPORT_PATH = config.DELAY_MODEL_DIR / "report.md"
 IMPORTANCE_PATH = config.DELAY_MODEL_DIR / "feature_importance.png"
 CALIBRATION_PATH = config.DELAY_MODEL_DIR / "calibration.png"
 
+RECENCY_HALF_LIFE_DAYS = 90
 LGBM_PARAMS = dict(
     n_estimators=5000, learning_rate=0.03, num_leaves=63, min_child_samples=200,
     subsample=0.8, subsample_freq=1, colsample_bytree=0.8, reg_lambda=1.0,
@@ -52,13 +58,19 @@ LGBM_PARAMS = dict(
 
 
 def load_data() -> pd.DataFrame:
-    if not (FLIGHTS_PATH.exists() and WEATHER_PATH.exists()):
-        export()
+    for path, cmd in [(FLIGHTS_PATH, "load_bts"), (WEATHER_PATH, "load_weather"),
+                      (DEST_WEATHER_PATH, "load_weather --dest")]:
+        if not path.exists():
+            sys.exit(f"{path.name} yok; önce `python -m src.ingest.{cmd}` çalıştırın.")
     flights = pd.read_parquet(FLIGHTS_PATH)
+    # İptal edilen uçuşlar hedef tanımına girmez (kalkış gecikmesi yok)
+    flights = flights[~flights["cancelled"] & flights["dep_del15"].notna()].drop(columns="cancelled")
+    flights["dep_del15"] = flights["dep_del15"].astype(bool)
     weather = pd.read_parquet(WEATHER_PATH)
-    df = attach_weather(flights, weather)
-    matched = df["temp_c"].notna().mean()
-    print(f"Veri: {len(df):,} uçuş | METAR eşleşme oranı: {matched:.2%}")
+    dest_weather = pd.read_parquet(DEST_WEATHER_PATH)
+    df = attach_weather(flights, weather, dest_weather)
+    print(f"Veri: {len(df):,} uçuş | METAR eşleşme oranı: kalkış {df['temp_c'].notna().mean():.2%}, "
+          f"varış {df['dest_wind_kt'].notna().mean():.2%}")
     return df
 
 
@@ -85,9 +97,20 @@ def make_logreg(class_weight=None) -> Pipeline:
                      ("clf", LogisticRegression(max_iter=2000, C=1.0, class_weight=class_weight))])
 
 
-def fit_lgbm(X_train, y_train, X_val, y_val, class_weight=None) -> lgb.LGBMClassifier:
+def recency_weights(train: pd.DataFrame) -> np.ndarray:
+    """Zaman sönümlü örnek ağırlığı: eğitimin son gününden RECENCY_HALF_LIFE_DAYS gün önceki
+    uçuş yarı ağırlık alır. Gecikme düzeyi aydan aya kaydığı için yakın geçmiş daha önemli;
+    eski aylar yine de mevsim bilgisini taşır (Ocak/Mart/Temmuz testlerinde seçildi)."""
+    dates = pd.to_datetime(train["flight_date"])
+    age_days = (dates.max() - dates).dt.days.to_numpy()
+    return 0.5 ** (age_days / RECENCY_HALF_LIFE_DAYS)
+
+
+def fit_lgbm(X_train, y_train, X_val, y_val, class_weight=None,
+             sample_weight=None) -> lgb.LGBMClassifier:
     model = lgb.LGBMClassifier(**LGBM_PARAMS, class_weight=class_weight)
-    model.fit(X_train, y_train, eval_X=X_val, eval_y=y_val, eval_metric="auc",
+    model.fit(X_train, y_train, sample_weight=sample_weight, eval_X=X_val, eval_y=y_val,
+              eval_metric="auc",
               callbacks=[lgb.early_stopping(200, verbose=False)])
     print(f"    en iyi iterasyon: {model.best_iteration_}")
     return model
@@ -133,12 +156,13 @@ def main() -> None:
     models["logreg"] = lr
 
     print("LightGBM (class_weight='balanced')...")
-    lgbm_bal = fit_lgbm(X_train, y_train, X_val, y_val, class_weight="balanced")
+    w_train = recency_weights(train)
+    lgbm_bal = fit_lgbm(X_train, y_train, X_val, y_val, class_weight="balanced", sample_weight=w_train)
     evaluate("LightGBM (class weight, eşik 0.5)",
              lgbm_bal.predict_proba(X_val)[:, 1], lgbm_bal.predict_proba(X_test)[:, 1], 0.5)
 
     print("LightGBM (ağırlıksız)...")
-    lgbm = fit_lgbm(X_train, y_train, X_val, y_val)
+    lgbm = fit_lgbm(X_train, y_train, X_val, y_val, sample_weight=w_train)
     p_val, p_test = lgbm.predict_proba(X_val)[:, 1], lgbm.predict_proba(X_test)[:, 1]
     evaluate("LightGBM (eşik 0.5)", p_val, p_test, 0.5)
     evaluate("LightGBM (eşik ayarlı) ★", p_val, p_test)
@@ -171,6 +195,7 @@ def main() -> None:
     }, MODEL_PATH)
     METRICS_PATH.write_text(json.dumps({
         "version": version, "test_delay_rate": test_rate, "n_test": int(len(y_test)),
+        "n_train": int(len(y_train)),
         "best_iteration": lgbm.best_iteration_, "results": results,
         "feature_importance_gain": importance.to_dict(), "calibration_ece": eces,
     }, indent=2, ensure_ascii=False), encoding="utf-8")

@@ -3,7 +3,7 @@
 Referans tablolar (Faz 1 Parquet'lerinden toplu yüklenir):
   flights_hist, weather_hourly, aircraft
 Kayıt tabloları (API tarafından yazılır):
-  delay_predictions, image_classifications
+  delay_predictions, image_classifications, nas_status_snapshots
 """
 from datetime import date, datetime
 
@@ -104,3 +104,17 @@ class ImageClassification(Base):
     model_version: Mapped[str | None] = mapped_column(Text)
 
     __table_args__ = (Index("ix_image_classifications_created_at", "created_at"),)
+
+
+class NasStatusSnapshot(Base):
+    """FAA NAS Status anlık görüntüleri (her birkaç dakikada bir). Geçmiş arşivi olmadığı
+    için kendimiz biriktiriyoruz: yeterli veri olunca gecikme modeline özellik olarak eklenir."""
+    __tablename__ = "nas_status_snapshots"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    events: Mapped[dict] = mapped_column(JSONB, nullable=False,
+                                         comment='{"ATL": [{"type": "ground_stop", ...}], ...}')
+    raw_xml: Mapped[str] = mapped_column(Text, nullable=False)
+
+    __table_args__ = (Index("ix_nas_status_snapshots_fetched_at", "fetched_at"),)

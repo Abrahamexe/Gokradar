@@ -7,11 +7,12 @@
 ![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.x-000000?logo=flask&logoColor=white)
 ![LightGBM](https://img.shields.io/badge/LightGBM-gecikme%20modeli-2E8B57)
-![PyTorch](https://img.shields.io/badge/PyTorch-EfficientNet--B0-EE4C2C?logo=pytorch&logoColor=white)
+![PyTorch](https://img.shields.io/badge/PyTorch-ConvNeXt--Tiny-EE4C2C?logo=pytorch&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?logo=postgresql&logoColor=white)
+![Blender](https://img.shields.io/badge/Blender-Cycles-F5792A?logo=blender&logoColor=white)
 ![Lisans](https://img.shields.io/badge/lisans-özel%20(tüm%20hakları%20saklıdır)-lightgrey)
 
-<img src="docs/images/anasayfa.jpg" alt="GÖKRADAR ana sayfa: teknik çizim olarak beliren Boeing 787" width="860">
+<img src="docs/images/anasayfa.jpg" alt="GÖKRADAR ana sayfa: alacakaranlıkta Boeing 787 ve İstikbal göklerdedir başlığı" width="860">
 
 </div>
 
@@ -21,33 +22,38 @@
 
 | | Modül | Ne sunar |
 |---|---|---|
-| 🛰️ | **Canlı harita** | Dünyadaki ~11 000 uçağı gerçek zamanlı gösterir (yolcu, kargo, askeri, savaş jeti, helikopter, genel havacılık). Uçak seçilince tescil, tip, operatör, rota ve irtifa geçmişi görünür. |
-| ⏱️ | **Gecikme tahmini** | Kalkış, varış, havayolu, tarih ve saat girilir; kalkış havalimanının **güncel METAR** hava durumu da hesaba katılarak uçuşun **15 dakikadan fazla gecikme olasılığı** döner. Aynı rota için günün farklı saatleri de karşılaştırılır. |
-| 📷 | **Uçak tanıma** | Yüklenen fotoğraftan 70 uçak ailesi arasında en olası üç tahmin ve güven skorları. Birbirine çok benzeyen aileler (DC-3 / C-47 gibi) tek satırda birleştirilir. |
+| 🛰️ | **Canlı harita** | Dünyadaki uçakları gerçek zamanlı gösterir (yolcu, kargo, askeri, savaş jeti, helikopter, genel havacılık). Uçak seçilince tescil, tip, operatör, rota, fotoğraf ve irtifa geçmişi görünür. |
+| ⏱️ | **Gecikme tahmini** | Kalkış, varış, havayolu, tarih ve saat girilir; kalkış ve varış havalimanlarının **güncel METAR** hava durumu da hesaba katılarak uçuşun **15 dakikadan fazla gecikme olasılığı** döner. Aynı rota için günün farklı saatleri karşılaştırılır; bugünkü uçuşlarda **FAA NAS Status** uyarıları (yer bekletme, kalkış gecikmesi, kapanış) ayrıca gösterilir. |
+| 📷 | **Uçak tanıma** | Yüklenen fotoğraftan **87 uçak ailesi** arasında en olası üç tahmin ve güven skorları (787, A350, A220, 737 MAX, F-35 gibi güncel tipler dahil). Birbirine çok benzeyen aileler (DC-3 / C-47 gibi) tek satırda birleştirilir. |
 
 ## Ekran görüntüleri
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/harita.jpg" alt="Canlı harita"><br><sub><b>Canlı harita</b> — adsb.lol verisiyle dünya geneli</sub></td>
-    <td width="50%"><img src="docs/images/gecikme.jpg" alt="Gecikme tahmini"><br><sub><b>Gecikme tahmini</b> — olasılık, günün saatleri, güncel METAR</sub></td>
+    <td width="50%"><img src="docs/images/anasayfa-pencere.jpg" alt="Ana sayfa: yolcu penceresi durağı"><br><sub><b>Ana sayfa</b>: kaydırdıkça kamera uçağın etrafında dolaşır</sub></td>
+    <td width="50%"><img src="docs/images/harita.jpg" alt="Canlı harita"><br><sub><b>Canlı harita</b>: adsb.lol verisiyle dünya geneli, seçili uçağın rotası</sub></td>
   </tr>
   <tr>
-    <td colspan="2"><img src="docs/images/tanima.jpg" alt="Uçak tanıma"><br><sub><b>Uçak tanıma</b> — fotoğraf yükle, en olası üç aileyi gör</sub></td>
+    <td width="50%"><img src="docs/images/gecikme.jpg" alt="Gecikme tahmini"><br><sub><b>Gecikme tahmini</b>: olasılık, günün saatleri, güncel METAR</sub></td>
+    <td width="50%"><img src="docs/images/tanima.jpg" alt="Uçak tanıma"><br><sub><b>Uçak tanıma</b>: fotoğraf yükle, en olası üç aileyi gör</sub></td>
   </tr>
 </table>
+
+<sub>Harita görüntüsünde Planespotters.net fotoğrafı telif nedeniyle bulanıklaştırıldı. Tanıma örneğindeki
+fotoğraf: “Etihad Airways, A6-BLF, Boeing 787-9 Dreamliner”, Anna Zvereva, CC BY-SA 2.0 (Wikimedia Commons).</sub>
 
 ## Nasıl çalışır?
 
 ```
  Tarayıcı ──────────────► Flask API (waitress) ───────────────────────────────────────┐
   harita / form / yükleme    │  hız sınırı · CSP · önbellek · gzip                      │
-                             ├─► DelayPredictor   LightGBM + kalkış METAR'ı             │
-                             ├─► AircraftClassifier   EfficientNet-B0 (CUDA / CPU)      │
+                             ├─► DelayPredictor   LightGBM + kalkış/varış METAR'ı       │
+                             ├─► NasStatusCache   FAA NAS Status (uyarı katmanı)        │
+                             ├─► AircraftClassifier   ConvNeXt-Tiny (CUDA / CPU)        │
                              ├─► AdsbFeed         adsb.lol (dünya) + adsb.fi (askeri)   │
                              ├─► OpenSkyCache     bölge önbelleği + günlük kredi sayacı │
                              ├─► MetarCache · RouteLookup (adsbdb.com)                  │
-                             └─► Repository ──► Neon PostgreSQL (uçak DB, kayıtlar) ◄───┘
+                             └─► Repository ──► Neon PostgreSQL (uçak DB, NAS kayıtları)┘
 ```
 
 - **Tek paylaşımlı anlık görüntü:** tüm kullanıcılar sunucudaki aynı canlı veri görüntüsünü alır; dış servise
@@ -55,31 +61,50 @@
 - **Modeller açılışta bir kez yüklenir**, her istekte değil. Gecikme tahmininde günün birden çok saati tek
   model çağrısıyla hesaplanır.
 - **Gecikme modelinde veri sızıntısı yok:** yalnızca kalkıştan önce bilinen özellikler kullanılır
-  (zaman, havayolu, rota, mesafe, METAR, havalimanı yoğunluğu).
+  (zaman, ay, tatile uzaklık, havayolu, rota, mesafe, kalkış ve varış METAR'ı, havalimanı yoğunluğu).
+- **FAA NAS Status** olasılığa katılmaz; bugünkü uçuşlarda ayrı bir uyarı olarak gösterilir. Durum değiştikçe
+  `nas_status_snapshots` tablosuna yazılır; yeterli geçmiş birikince modele özellik olarak eklenebilir.
+- **Ana sayfa WebGL değildir:** Blender Cycles ile önceden render alınmış 439 karelik bir dizi, kaydırma
+  oranına göre canvas'a çizilir (Apple ürün sayfalarındaki yöntem). Masaüstü 14 MB, mobil 6 MB WebP.
 
 ## Model sonuçları
 
-**Gecikme modeli** — LightGBM, ABD'nin en yoğun 10 havalimanı (ATL, DFW, DEN, ORD, LAX, JFK, LAS, CLT, MCO, SEA),
-BTS verisinin Haziran–Temmuz 2026 dönemi; son 14 gün test seti (90 383 uçuş, gecikme oranı %32,4).
+**Gecikme modeli:** LightGBM, ABD'nin en yoğun 10 havalimanı (ATL, DFW, DEN, ORD, LAX, JFK, LAS, CLT, MCO, SEA)
+çıkışlı uçuşlar, BTS verisinin Ağustos 2025–Temmuz 2026 dönemi (12 ay). Eğitim 2,10 milyon uçuş, son eğitim
+günlerine 90 günlük zaman sönümüyle daha fazla ağırlık verilir. Test: son 14 gün (Temmuz 2026, 90 383 uçuş,
+gecikme oranı %32,4).
 
 | Model | ROC-AUC | PR-AUC | F1 | Recall | Brier |
 |---|---|---|---|---|---|
-| Lojistik regresyon (eşik ayarlı) | 0,696 | 0,517 | 0,547 | 0,728 | 0,197 |
-| **LightGBM (eşik ayarlı)** ★ | **0,712** | **0,536** | **0,559** | **0,719** | **0,193** |
+| Lojistik regresyon (eşik ayarlı) | 0,695 | 0,510 | 0,545 | 0,727 | 0,199 |
+| **LightGBM (eşik ayarlı)** ★ | **0,714** | **0,535** | **0,559** | **0,704** | **0,195** |
 
-> Gecikme, havalimanı ve hava durumu gibi çoğu zaman kontrol dışı etkenlere bağlı olduğundan bu bir **risk
-> göstergesidir, garanti değil**. Model olasılığı sistematik olarak biraz düşük tahmin eder (test dönemi
-> eğitim döneminden daha gecikmeliydi); kalibrasyon grafiği eğitim çıktılarında bulunur.
+Ocak, Mart ve Temmuz 2026 üzerinde geriye dönük test (ortalama ROC-AUC):
 
-**Uçak sınıflandırıcı** — EfficientNet-B0 (transfer learning), FGVC-Aircraft, 70 aile, 3 333 test görüntüsü.
+| Eğitim ağırlığı | ROC-AUC |
+|---|---|
+| Tüm geçmiş, eşit ağırlık | 0,6941 |
+| Yalnızca son 2 ay | 0,6934 |
+| 30 günlük sönüm | 0,6936 |
+| **90 günlük sönüm** ★ | **0,6943** |
+
+> Gecikme çoğu zaman havalimanı yoğunluğu ve hava durumu gibi kontrol dışı etkenlere bağlıdır; bu yüzden
+> sonuç bir **risk göstergesidir, garanti değil**.
+
+**Uçak sınıflandırıcı:** ConvNeXt-Tiny (ImageNet ön eğitimli, ince ayar, 320 px), FGVC-Aircraft ve Wikimedia
+Commons (CC lisanslı) fotoğrafları, 87 aile. Commons verisi fotoğrafçıya göre bölündü; aynı kişinin
+neredeyse aynı kareleri farklı bölümlere düşmez. Test: 4 667 görüntü.
 
 | Metrik | Test |
 |---|---|
-| Top-1 doğruluk | **%89,1** |
-| Top-3 doğruluk | **%96,0** |
-| Macro doğruluk | %88,8 |
+| Top-1 doğruluk | **%94,0** |
+| Top-3 doğruluk | **%97,0** |
+| Macro doğruluk | %94,2 |
+| Top-1, yalnızca FGVC (3 333) | %95,2 |
+| Top-1, yalnızca Commons (1 334) | %91,2 |
 
-Veri seti 2013 tarihli olduğundan A350 veya 737 MAX gibi yeni tipler en benzer aileye atanır.
+En çok karıştırılanlar DC-3 ↔ C-47 (arayüzde birleştirilir), Gripen ↔ Rafale ↔ MiG-29 ve 787 ↔ A350. Veri
+setinde olmayan bir tip en benzer aileye atanır.
 
 ## Teknolojiler
 
@@ -88,8 +113,9 @@ Veri seti 2013 tarihli olduğundan A350 veya 737 MAX gibi yeni tipler en benzer 
 | Arka uç | Python 3.14, Flask, waitress, Flask-Compress, SQLAlchemy |
 | Veritabanı | PostgreSQL (Neon, pooler bağlantısı) |
 | Makine öğrenmesi | LightGBM, scikit-learn, pandas, PyTorch, torchvision, Pillow |
-| Ön uç | Düz JavaScript, Leaflet (harita), three.js + GLTF (3B ana sayfa), Lenis |
-| Veri | adsb.lol, adsb.fi, OpenSky Network, adsbdb.com, BTS, aviationweather.gov, Iowa Environmental Mesonet |
+| Ön uç | Düz JavaScript ve CSS, Leaflet (harita), Geist yazı tipi |
+| Görsel | Blender 4.5 Cycles (OptiX), Poly Haven HDRI |
+| Veri | adsb.lol, adsb.fi, OpenSky Network, adsbdb.com, BTS, aviationweather.gov, Iowa Environmental Mesonet, FAA NAS Status, Wikimedia Commons |
 
 ## Kurulum
 
@@ -135,36 +161,48 @@ Tarayıcıda <http://127.0.0.1:5000/> — `/` ana sayfa · `/harita` canlı hari
 
 **1. Veri toplama**
 ```powershell
-python -m src.ingest.load_bts          # data/raw/bts/*.zip → data/processed/bts_flights.parquet
-python -m src.ingest.load_weather      # IEM METAR → data/processed/weather_hourly.parquet (load_bts'den sonra)
-python -m src.ingest.load_aircraft_db  # OpenSky aircraft DB → data/processed/aircraft.parquet
-python -m src.ingest.load_fgvc         # FGVC-Aircraft → data/raw/fgvc/ + sınıf dağılımı raporu
+python -m src.ingest.load_bts --download 2025-08 2026-07  # BTS'den 12 ayı indir → data/processed/bts_flights.parquet
+python -m src.ingest.load_weather         # kalkış havalimanlarının IEM METAR'ı (load_bts'den sonra)
+python -m src.ingest.load_weather --dest  # BTS'deki tüm varış havalimanlarının METAR'ı
+python -m src.ingest.load_aircraft_db     # OpenSky aircraft DB → data/processed/aircraft.parquet
+python -m src.ingest.load_fgvc            # FGVC-Aircraft → data/raw/fgvc/ + sınıf dağılımı raporu
+python -m src.ingest.load_commons         # Wikimedia Commons'tan güncel tipler (collect → download → filter → split)
 ```
-BTS "On-Time Performance" ZIP dosyaları `data/raw/bts/` klasörüne elle konur; birden çok ay desteklenir.
+`--download` verilmezse `data/raw/bts/` içindeki ZIP/CSV dosyaları okunur. Commons toplama yarıda kalırsa aynı
+komut kaldığı yerden sürer (tamamı yaklaşık 1,5 saat; API hız sınırına uyar).
 
 **2. Veritabanı**
 ```powershell
-python -m src.db.init_db               # tabloları ve indeksleri oluştur (varsa dokunmaz)
-python -m src.ingest.load_to_db        # Parquet → Neon (COPY); tablolar boşaltılıp yeniden doldurulur
-python -m src.ingest.load_to_db flights  # yalnızca seçilen tablo(lar): flights, weather, aircraft
+python -m src.db.init_db               # tabloları ve indeksleri oluştur (nas_status_snapshots dahil; varsa dokunmaz)
+python -m src.ingest.load_to_db aircraft  # Parquet → Neon (COPY); yalnızca uygulamanın kullandığı uçak tablosu
 ```
+Eğitim verisi Neon'a yüklenmez; modeller yerel Parquet dosyalarından eğitilir (ücretsiz Neon kotası küçük).
 
 **3. Gecikme modeli**
 ```powershell
-python -m src.ml.delay.export_data     # Neon → data/processed/delay_train_*.parquet (bir kez; --refresh ile yenile)
-python -m src.ml.delay.train           # LogReg + LightGBM; çıktılar models/delay/ altında
+python -m src.ml.delay.train           # LogReg + LightGBM, yerel Parquet'ten; çıktılar models/delay/ altında
 python -m src.ml.delay.calibration     # kalibrasyon grafiği (yeniden eğitmeden)
 ```
 
 **4. Fotoğraf sınıflandırma**
 ```powershell
-python -m src.ml.vision.train select --arch efficientnet_b0  # train'de eğit, val'de epoch seç
-python -m src.ml.vision.train select --arch resnet50
-python -m src.ml.vision.train final    # en iyi mimari + epoch ile train+val'de yeniden eğit
-python -m src.ml.vision.evaluate       # test seti — yalnızca en sonda, bir kez
+python -m src.ml.vision.train select --arch convnext_tiny  # train'de eğit, val'de epoch seç
+python -m src.ml.vision.train final    # seçilen ayarlarla train+val'de yeniden eğit
+python -m src.ml.vision.evaluate       # test seti: yalnızca en sonda, bir kez
 ```
 Eğitim her epoch sonunda `models/vision/checkpoints/` altına checkpoint yazar; yarıda kalırsa aynı komuta
-`--resume` eklenerek sürdürülür.
+`--resume` eklenerek sürdürülür. RTX 3060 Laptop ile select + final + evaluate yaklaşık 2 saat sürer.
+
+**5. Ana sayfa sahnesi (isteğe bağlı)**
+```powershell
+# tools/blender/ içine b787.glb (depoda) ve sky.hdr (Poly Haven "qwantani_dusk_2_puresky" 4K, CC0) gerekir
+blender -b --python tools/blender/scene.py -- --still hero,cockpit,window,top --pct 50   # deneme kareleri
+blender -b --python tools/blender/scene.py -- --anim 1 --pct 100 --samples 256          # 220 kare
+blender -b --python tools/blender/scene.py -- --inbetween 180 --pct 100 --samples 256   # iki kat sık dizi
+python tools/encode_frames.py tools/blender/frames_ib   # PNG → src/web/static/seq/{d,m}/NNN.webp
+```
+Render yarıda kalırsa aynı komut var olan kareleri atlayarak sürer. RTX 3060 ile 1440p, 256 örnek: kare başına
+7–30 sn.
 
 </details>
 
@@ -201,10 +239,10 @@ Hatalar her zaman `{"error": {"code": "...", "message": "..."}}` biçimindedir.
   içeriği (JPG/PNG), boyutu ve piksel sayısı kontrol edilir (sıkıştırma bombası koruması).
 - **Güvenli model yükleme:** görüntü modeli `torch.load(weights_only=True)` ile açılır.
 - **Gizli bilgiler** yalnızca `.env` ve `credentials.json` içindedir ve git'e girmez.
-- **Önbellek ve sıkıştırma:** gzip/brotli; CSS/JS adresleri `?v=` ile sürümlenip bir yıl, büyük model ve
-  görseller bir gün önbelleğe alınır.
-- **Dış servisler:** Google Fonts, jsDelivr/unpkg (Leaflet ve Lenis SRI ile), Stadia Maps ve Planespotters.net
-  ziyaretçinin IP adresini ilgili servislerle paylaşır.
+- **Önbellek ve sıkıştırma:** gzip/brotli; CSS/JS ve ana sayfa kareleri `?v=` ile sürümlenip bir yıl,
+  diğer görseller bir gün önbelleğe alınır.
+- **Dış servisler:** Google Fonts, unpkg (Leaflet, SRI ile), Stadia Maps ve Planespotters.net ziyaretçinin
+  IP adresini ilgili servislerle paylaşır.
 - Yüklenen fotoğraflar `data/uploads/` altında saklanır; kişisel veri içerebileceğinden düzenli temizleyin.
 
 ### Siteyi yayına alırken
@@ -219,15 +257,15 @@ yalnızca yerel porta bağlı bırakın ve `.env` içinde `TRUSTED_PROXY_HOPS=1`
 config.py                 # tüm ayarlar (havalimanları, eşikler, önbellek süreleri, hız sınırları)
 src/
 ├── api/                  # Flask uygulaması: app, routes, services, validation, ratelimit
-├── web/                  # sayfalar, şablonlar, CSS/JS, 3B model ve görseller
-├── services/             # adsb_feed, opensky_client/cache, metar_client, route_lookup
+├── web/                  # sayfalar, şablonlar, CSS/JS, ana sayfa kare dizisi (static/seq/)
+├── services/             # adsb_feed, opensky_client/cache, metar_client, route_lookup, nas_status
 ├── ml/
-│   ├── delay/            # gecikme modeli: export_data, train, evaluate, calibration, predict
+│   ├── delay/            # gecikme modeli: train, evaluate, calibration, predict
 │   └── vision/           # uçak sınıflandırıcı: train, evaluate, predict
 ├── features/             # gecikme özellikleri ve hava durumu eşleme
-├── ingest/               # BTS, METAR, uçak DB, FGVC, Neon'a toplu yükleme
+├── ingest/               # BTS, METAR, uçak DB, FGVC, Wikimedia Commons, Neon'a toplu yükleme
 └── db/                   # bağlantı, tablolar (SQLAlchemy), depo sınıfı
-tools/blender/scene.py    # ana sayfa sahnesi (Blender Cycles): 787, ışık, kamera yolu
+tools/blender/            # ana sayfa sahnesi (Blender Cycles): scene.py ve 787 modeli (b787.glb)
 tools/encode_frames.py    # render karelerini masaüstü/mobil WebP dizisine çevirir
 ```
 
@@ -236,9 +274,12 @@ tools/encode_frames.py    # render karelerini masaüstü/mobil WebP dizisine çe
 - Uçuş gecikmeleri: ABD BTS On-Time Performance; hava durumu: Iowa Environmental Mesonet ve aviationweather.gov (METAR).
 - Canlı konumlar: [adsb.lol](https://adsb.lol) (ODbL), adsb.fi ve OpenSky Network; rotalar: adsbdb.com; fotoğraflar:
   Planespotters.net (kullanım koşulları gereği fotoğrafçıya ve sayfaya bağlanır).
-- Fotoğraf modeli FGVC-Aircraft verisiyle eğitilir (yalnızca araştırma/ticari olmayan kullanım; veri bu depoda
-  dağıtılmaz).
-- Ana sayfadaki 3B model: “Boeing 787-8”, rocket0314 (Sketchfab), CC BY 4.0.
+- FAA NAS Status (nasstatus.faa.gov): ABD havalimanlarındaki anlık programlar ve kapanışlar.
+- Fotoğraf modeli FGVC-Aircraft (yalnızca araştırma/ticari olmayan kullanım) ve Wikimedia Commons fotoğraflarıyla
+  (CC BY / CC BY-SA; yazar ve lisans bilgisi `data/raw/commons/manifest.csv` içinde) eğitilir. Veriler bu depoda
+  dağıtılmaz.
+- Ana sayfadaki 3B model: “Boeing 787-8”, rocket0314 (Sketchfab), CC BY 4.0; render kareleri bu modelden
+  Blender Cycles ile üretildi. Gökyüzü ışığı: “Qwantani Dusk 2 (Pure Sky)”, Poly Haven, CC0.
 - Harita karoları: Stadia Maps, OpenMapTiles, OpenStreetMap katkıcıları (Stadia'nın ücretsiz planı ticari olmayan
   kullanım içindir).
 

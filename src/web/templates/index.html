@@ -4,8 +4,8 @@
 {% block body_class %}flight{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('web.static', filename='css/flight.css') }}">
-<link rel="preload" as="image" href="{{ url_for('web.static', filename='seq/d/001.webp') }}" media="(min-width: 901px)">
-<link rel="preload" as="image" href="{{ url_for('web.static', filename='seq/m/001.webp') }}" media="(max-width: 900px)">
+<link rel="preload" as="image" href="{{ url_for('web.static', filename='seq/d/001.webp') }}?v={{ seq_v }}" media="(min-width: 901px)">
+<link rel="preload" as="image" href="{{ url_for('web.static', filename='seq/m/001.webp') }}?v={{ seq_v }}" media="(max-width: 900px)">
 {% endblock %}
 
 {% block layout %}

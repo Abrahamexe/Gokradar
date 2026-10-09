@@ -12,7 +12,7 @@
 {# Sahne: Blender'da ışın izlemeyle render alınmış 180 kare; kaydırma oranı hangi karenin
    çizileceğini belirler (flight.js). Kareler yüklenene kadar ilk kare arka plan resmidir. #}
 <div class="scene" aria-hidden="true">
-  <canvas class="scene__canvas" id="scene" data-frames="{{ n_frames }}"
+  <canvas class="scene__canvas" id="scene" data-frames="{{ n_frames }}" data-v="{{ seq_v }}"
           data-src="{{ url_for('web.static', filename='seq/') }}"></canvas>
   <div class="scene__vignette"></div>
   <div class="scene__shade" id="shade"></div>
@@ -20,7 +20,7 @@
 <div class="loadbar" id="loadbar" aria-hidden="true"><span id="loadbar-fill"></span></div>
 
 <main id="main" class="story">
-  <section class="beat beat--hero" data-from="0" data-to="0.07">
+  <section class="beat beat--hero" data-from="0" data-to="0.057">
     <p class="eyebrow">Boeing 787-8 · Canlı takip</p>
     <h1 class="display">İstikbal<br>göklerdedir.</h1>
     <p class="byline">Mustafa Kemal Atatürk</p>
@@ -28,7 +28,7 @@
     <p class="hint" aria-hidden="true"><span class="hint__line"></span>Kaydırın</p>
   </section>
 
-  <section class="beat beat--card beat--left-low" data-from="0.27" data-to="0.41" aria-labelledby="b1">
+  <section class="beat beat--card beat--left-low" data-from="0.221" data-to="0.335" aria-labelledby="b1">
     <p class="eyebrow">01 · Kokpit</p>
     <h2 class="title" id="b1">Canlı harita</h2>
     <p class="text">Yolcu, kargo, askeri ve genel havacılık: dünyadaki uçakların anlık konumu, rotası ve irtifası.</p>
@@ -36,7 +36,7 @@
     <a class="cta" href="{{ url_for('web.harita') }}">Haritayı aç {{ icon("arrow", 16) }}</a>
   </section>
 
-  <section class="beat beat--card beat--right-high" data-from="0.57" data-to="0.71" aria-labelledby="b2">
+  <section class="beat beat--card beat--right-high" data-from="0.466" data-to="0.58" aria-labelledby="b2">
     <p class="eyebrow">02 · Yolcu penceresi</p>
     <h2 class="title" id="b2">Gecikme tahmini</h2>
     <p class="text">Kalkış, varış, havayolu ve saat; hava durumu da hesaba katılarak 15 dakikayı aşan gecikme olasılığı.</p>
@@ -44,7 +44,7 @@
     <a class="cta" href="{{ url_for('web.gecikme') }}">Riski hesapla {{ icon("arrow", 16) }}</a>
   </section>
 
-  <section class="beat beat--card beat--left-low" data-from="0.88" data-to="1.01" aria-labelledby="b3">
+  <section class="beat beat--card beat--left-low" data-from="0.719" data-to="1.01" aria-labelledby="b3">
     <p class="eyebrow">03 · Tepeden</p>
     <h2 class="title" id="b3">Uçak tanıma</h2>
     <p class="text">Bir fotoğraf yükleyin; model {% if n_families %}{{ n_families }} {% endif %}uçak ailesi arasından en olası üç tahmini versin.</p>

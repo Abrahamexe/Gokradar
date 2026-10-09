@@ -8,7 +8,7 @@
   const ctx = canvas.getContext("2d", { alpha: false });
   const N = Number(canvas.dataset.frames);
   const set = window.matchMedia("(max-width: 900px)").matches ? "m" : "d";
-  const url = (i) => `${canvas.dataset.src}${set}/${String(i + 1).padStart(3, "0")}.webp`;
+  const url = (i) => `${canvas.dataset.src}${set}/${String(i + 1).padStart(3, "0")}.webp?v=${canvas.dataset.v}`;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const frames = new Array(N);
   const beats = [...document.querySelectorAll(".beat")];
@@ -21,7 +21,8 @@
   // --- yükleme sırası: duraklar → her 6. kare → kalanlar --------------------------------------
   const order = [];
   const push = (i) => { if (i >= 0 && i < N && !order.includes(i)) order.push(i); };
-  [0, Math.round(N * 0.33), Math.round(N * 0.64), N - 1].forEach(push);
+  // Duraklar (kaydırma oranı): açılış, kokpit, pencere, tepe, kapanış
+  [0, 0.269, 0.521, 0.817, 1].forEach((p) => push(Math.round(p * (N - 1))));
   for (let i = 0; i < N; i += 6) push(i);
   for (let i = 0; i < N; i++) push(i);
 
@@ -85,11 +86,11 @@
     for (const b of beats) {
       b.classList.toggle("is-on", p >= Number(b.dataset.from) && p < Number(b.dataset.to));
     }
-    shade.classList.toggle("is-on", p < 0.07);
+    shade.classList.toggle("is-on", p < 0.057);
     const dy = scrollY - lastY;
     if (Math.abs(dy) > 6) nav.classList.toggle("is-hidden", dy > 0 && scrollY > 120);
     lastY = scrollY;
-    if (p > 0.12) loadLiveCount();
+    if (p > 0.1) loadLiveCount();
   }
 
   function tick() {

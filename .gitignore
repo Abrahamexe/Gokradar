@@ -49,6 +49,13 @@ logs/
 *.log
 *.tmp
 
+# ── Blender sahnesi: indirilen HDRI ve render çıktıları (siteye giden kareler seq/ içinde) ──
+tools/blender/sky.hdr
+tools/blender/*.blend
+tools/blender/*.blend1
+tools/blender/frames*/
+tools/blender/test/
+
 # ── IDE / OS / araçlar ────────────────────────────────────────────
 .vscode/
 .idea/

@@ -2,6 +2,8 @@
 
 blender -b --python scene.py -- [--still hero|cockpit|window|top] [--pct 50] [--samples 64]
 blender -b --python scene.py -- --anim 1 --pct 100 --samples 256   # final: frames/f_####.png
+blender -b --python scene.py -- --inbetween 180 --pct 100 --samples 256   # iki kat sık dizi
+  (frames_ib/: ilk 180 karenin arası + kapanış; ilk render'ın k. karesi yeni dizide 2k−1 olur)
 Sahneyi kurar, scene.blend olarak kaydeder; --still verilirse o istasyonu render alır.
 
 Girdiler bu betikle aynı klasörde olmalı:
@@ -22,9 +24,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 opt = {args[i].lstrip("-"): args[i + 1] for i in range(0, len(args) - 1, 2)}
 
-FRAMES = 180
-# İstasyonlar: kare numarası (kaydırma sırası)
-STATIONS = {"hero": 1, "cockpit": 60, "window": 115, "top": 180}
+FRAMES = 220
+# İstasyonlar: kare numarası (kaydırma sırası). "away": tepeden sonra kamera aynı doğrultuda
+# yükselerek uzaklaşır (kapanış); 1–180 arası ilk render ile aynı kalır.
+STATIONS = {"hero": 1, "cockpit": 60, "window": 115, "top": 180, "away": 220}
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
@@ -323,19 +326,92 @@ VIA = {
     101: (WIN + Vector((-10, -11, 6.5)), WIN + Vector((2, 0, -0.5)), 40, 8),                    # pencereye inişte uzak dur
     148: (Vector((-2, -40, 45)), Vector((-2, 0, 0)), 45, 16),
 }
-for name, (pos, tgt, lens, fstop) in list(KEYS.items()) + list(VIA.items()):
-    f = STATIONS[name] if name in STATIONS else name
+# Kapanış: tepe görünümünden aynı bakış doğrultusunda geri çekilir (uçak karanlıkta küçülür)
+TOP_CAM, TOP_TGT = KEYS["top"][0], KEYS["top"][1]
+AWAY = (TOP_TGT + (TOP_CAM - TOP_TGT) * float(opt.get("away", 2.7)), TOP_TGT.copy(), 50, 22)
+
+
+def insert_key(f, pos, tgt, lens, fstop):
     cam.location = pos; cam.keyframe_insert("location", frame=f)
     target.location = tgt; target.keyframe_insert("location", frame=f)
     cam_data.lens = lens; cam_data.keyframe_insert("lens", frame=f)
     cam_data.dof.aperture_fstop = fstop; cam_data.dof.keyframe_insert("aperture_fstop", frame=f)
-for ob in (cam, target, cam_data):
-    ad = ob.animation_data
-    if ad and ad.action:
-        for fc in ad.action.fcurves:
-            for kp in fc.keyframe_points:
-                kp.interpolation = "BEZIER"; kp.easing = "EASE_IN_OUT"
+
+
+def fcurves():
+    return [fc for ob in (cam, target, cam_data) if ob.animation_data and ob.animation_data.action
+            for fc in ob.animation_data.action.fcurves]
+
+
+def owner(fc):
+    """Eğrinin sahibi (kamera / hedef / kamera verisi); action adları yeniden kurulunca değişir."""
+    return next(type(ob).__name__ + ob.name for ob in (cam, target, cam_data)
+                if ob.animation_data and ob.animation_data.action == fc.id_data)
+
+
+def set_easing():
+    for fc in fcurves():
+        for kp in fc.keyframe_points:
+            kp.interpolation = "BEZIER"; kp.easing = "EASE_IN_OUT"
+            if kp.handle_left_type != "FREE":
                 kp.handle_left_type = kp.handle_right_type = "AUTO_CLAMPED"
+        fc.update()
+
+
+TOP_F, AWAY_F = STATIONS["top"], STATIONS["away"]
+fkey = lambda fc: (owner(fc), fc.data_path, fc.array_index)  # noqa: E731
+
+
+def clear_path():
+    for ob in (cam, target, cam_data):
+        ob.animation_data_clear()
+
+
+def build_path(s=1, top_left=None):
+    """Kamera yolunu kurar. s=2: kare numaraları 2f − 1 (ara kare modu; eğri aynı, iki kat sık).
+
+    top_left verilirse tepe anahtarının sol tutamağı (s=1 değerleri) korunur, kapanış anahtarı
+    eklenir; sağ tutamak yatay (duraktan yavaşça kalkış). Döner: tepe anahtarının sol tutamakları.
+    """
+    m = lambda f: s * f - (s - 1)  # noqa: E731
+    for name, (pos, tgt, lens, fstop) in list(KEYS.items()) + list(VIA.items()):
+        insert_key(m(STATIONS[name] if name in STATIONS else name), pos, tgt, lens, fstop)
+    set_easing()
+    lefts = {fkey(fc): tuple(next(k for k in fc.keyframe_points if k.co.x == m(TOP_F)).handle_left)
+             for fc in fcurves()}
+    if top_left is None:
+        return lefts
+    insert_key(m(AWAY_F), *AWAY)
+    set_easing()
+    for fc in fcurves():
+        kp = next(k for k in fc.keyframe_points if k.co.x == m(TOP_F))
+        lx, ly = top_left[fkey(fc)]
+        kp.handle_left_type = kp.handle_right_type = "FREE"
+        kp.handle_left = (m(lx), ly)
+        kp.handle_right = (m(TOP_F) + (m(AWAY_F) - m(TOP_F)) / 3, kp.co.y)
+        fc.update()
+    return lefts
+
+
+# 1–180 arası ilk render'la (180 kare) birebir aynı kalmalı. Önce ilk render'daki yol kurulup
+# örneklenir, sonra kapanışlı (ve istenirse iki kat sık) yol kurulur ve karşılaştırılır.
+SAMPLES = [1 + i * 0.25 for i in range((TOP_F - 1) * 4 + 1)]   # 1–180, çeyrek kare adımla
+left0 = build_path()
+ref = {fkey(fc): [fc.evaluate(t) for t in SAMPLES] for fc in fcurves()}
+clear_path()
+# Ara kare modu: yeni kare i, eski zaman (i + 1) / 2'ye denk gelir; tek kareler ilk render'ın
+# kareleri, çift kareler aralarındaki anlar.
+DOUBLE = "inbetween" in opt
+S = 2 if DOUBLE else 1
+build_path(S, left0)
+for fc in fcurves():
+    drift = max(abs(fc.evaluate(S * t - (S - 1)) - v) for t, v in zip(SAMPLES, ref[fkey(fc)]))
+    if drift > 1e-4:
+        sys.exit(f"Kamera yolu değişti: {fc.data_path}[{fc.array_index}] sapma {drift:.6f}")
+print(f"PATH OK: 1-180 değişmedi (x{S})", flush=True)
+if DOUBLE:
+    FRAMES = 2 * FRAMES - 1
+    STATIONS = {k: 2 * v - 1 for k, v in STATIONS.items()}
 
 # --- render ayarları ------------------------------------------------------------------------
 scene.frame_start, scene.frame_end = 1, FRAMES
@@ -383,3 +459,28 @@ if "anim" in opt:
     scene.render.image_settings.compression = 15
     bpy.ops.render.render(animation=True)
     print("ANIM DONE")
+
+if DOUBLE:
+    # --inbetween <ilk render kare sayısı>: yalnızca eksik kareler render alınır (ilk render'ın
+    # kareleri tek numaralarda zaten var). Yarım kalırsa aynı komut kaldığı yerden sürer; kare önce
+    # geçici adla yazılır, bitince yeniden adlandırılır (diskte yarım PNG kalmaz).
+    first = int(opt["inbetween"])
+    out = os.path.join(HERE, "frames_ib")
+    os.makedirs(out, exist_ok=True)
+    scene.render.image_settings.color_depth = "8"
+    scene.render.image_settings.compression = 15
+    only = opt.get("only")   # teşhis: "438,439" gibi seçili kareler
+    todo = [int(x) for x in only.split(",")] if only else \
+        [i for i in range(1, FRAMES + 1) if not (i % 2 == 1 and (i + 1) // 2 <= first)]
+    print(f"INBETWEEN {len(todo)} kare", flush=True)
+    for i in todo:
+        path = os.path.join(out, f"f_{i:04d}.png")
+        if os.path.exists(path):
+            continue
+        scene.frame_set(i)
+        tmp = os.path.join(out, f"tmp_{i:04d}.png")
+        scene.render.filepath = tmp
+        bpy.ops.render.render(write_still=True)
+        os.replace(tmp, path)
+        print("RENDERED", i, flush=True)
+    print("INBETWEEN DONE", flush=True)

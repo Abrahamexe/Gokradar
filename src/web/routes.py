@@ -54,11 +54,14 @@ def index():
     svc = current_app.extensions["flight_delay"]
     classes = getattr(svc.classifier, "classes", None)
     airports = [{"iata": a, "name": config.AIRPORT_NAMES.get(a, a)} for a in svc.delay_predictor.airports]
-    n_frames = max((int(p.stem) for p in (Path(web.static_folder) / "seq" / "d").glob("*.webp")), default=0)
+    seq = list((Path(web.static_folder) / "seq" / "d").glob("*.webp"))
+    n_frames = max((int(p.stem) for p in seq), default=0)
+    # Kare adresleri sürümlü: dizi yeniden render edilince tarayıcı önbelleğindeki eski kareler kullanılmaz
+    seq_v = max((int(p.stat().st_mtime) for p in seq), default=0)
     delay = _read_json(config.DELAY_MODEL_DIR / "metrics.json") or {}
     n_train = delay.get("n_train")
     return render_template("index.html", active="web.index", metrics=model_summary(),
-                           n_airports=len(airports), airports=airports, n_frames=n_frames,
+                           n_airports=len(airports), airports=airports, n_frames=n_frames, seq_v=seq_v,
                            train_flights=(f"{n_train / 1e6:.2f}".replace(".", ",") + " milyon") if n_train else "geçmiş",
                            n_families=len(classes) if classes else None)
 

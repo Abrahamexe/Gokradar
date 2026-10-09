@@ -1,0 +1,127 @@
+/* Ana sayfa: kaydırmayla oynayan render dizisi + duraklarda beliren kartlar. Kokpit paleti. */
+.flight {
+  --bg: #05090F;
+  --panel: rgba(12, 21, 32, 0.62);
+  --line: rgba(79, 209, 255, 0.16);
+  --text: #E6F1F5;
+  --muted: #8FA2B2;
+  --accent: #4FD1FF;
+  --live: #3DDC84;
+  --ease: cubic-bezier(.22, .61, .36, 1);
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Geist", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- sahne ---------------------------------------------------------------------------- */
+.scene { position: fixed; inset: 0; z-index: 0; background: var(--bg) center / cover no-repeat; }
+.scene__canvas { width: 100%; height: 100%; display: block; }
+.scene__vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(5, 9, 15, 0.55) 0%, rgba(5, 9, 15, 0) 42%),
+    linear-gradient(0deg, rgba(5, 9, 15, 0.5) 0%, rgba(5, 9, 15, 0) 30%);
+}
+/* Açılışta başlığın altındaki kanat/gövde koyulaştırılır (okunurluk); kaydırınca kalkar */
+.scene__shade {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .7s var(--ease);
+  background: linear-gradient(90deg, rgba(5, 9, 15, 0.88) 0%, rgba(5, 9, 15, 0.62) 34%, rgba(5, 9, 15, 0) 58%);
+}
+.scene__shade.is-on { opacity: 1; }
+.loadbar { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 30; pointer-events: none; }
+.loadbar span { display: block; height: 100%; width: 0; background: var(--accent); opacity: .8; transition: width .3s var(--ease), opacity .6s; }
+.loadbar.is-done span { opacity: 0; }
+
+/* --- menü: buzlu cam, aşağı kaydırınca gizlenir --------------------------------------------- */
+.nav {
+  position: fixed; top: 14px; left: 50%; z-index: 20;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 28px;
+  padding: 8px 10px 8px 18px; border-radius: 999px;
+  background: rgba(12, 21, 32, 0.55);
+  -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(230, 241, 245, 0.08);
+  transition: transform .45s var(--ease), opacity .45s var(--ease);
+}
+.nav.is-hidden { transform: translate(-50%, -140%); opacity: 0; }
+.nav__brand { display: flex; align-items: center; gap: 8px; color: var(--text); text-decoration: none; font-weight: 600; font-size: 14px; letter-spacing: .06em; }
+.nav__links { display: flex; gap: 4px; }
+.nav__links a {
+  color: #C3D1DB; text-decoration: none; font-size: 13px; padding: 8px 14px; border-radius: 999px; white-space: nowrap;
+  transition: background-color .2s, color .2s;
+}
+.nav__links a:hover { background: rgba(79, 209, 255, 0.1); color: var(--text); }
+.nav a:focus-visible, .cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* --- hikâye: kaydırma uzunluğu; kartlar sabit, görünürlükleri JS ile --------------------------- */
+.story { position: relative; z-index: 10; height: 700vh; }
+.beat {
+  position: fixed; z-index: 10; opacity: 0; visibility: hidden;
+  transform: translateY(18px);
+  transition: opacity .6s var(--ease), transform .8s var(--ease), visibility 0s linear .6s;
+}
+.beat.is-on { opacity: 1; visibility: visible; transform: none; transition: opacity .6s var(--ease), transform .8s var(--ease), visibility 0s; }
+
+.beat--hero { left: clamp(20px, 6vw, 96px); top: 50%; transform: translateY(-46%); max-width: 640px; }
+.beat--hero.is-on { transform: translateY(-50%); }
+.eyebrow { margin: 0 0 18px; font-family: "Geist Mono", monospace; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+.display { margin: 0; font-weight: 600; font-size: clamp(52px, 8.2vw, 124px); line-height: .96; letter-spacing: -.04em; }
+.byline { margin: 18px 0 0; color: var(--muted); font-size: 14px; letter-spacing: .02em; }
+.lead { margin: 34px 0 0; max-width: 440px; font-size: clamp(16px, 1.35vw, 19px); line-height: 1.5; color: #C3D1DB; }
+.hint { margin: 48px 0 0; display: flex; align-items: center; gap: 12px; font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.hint__line { width: 36px; height: 1px; background: var(--muted); transform-origin: left; animation: hint 2.4s var(--ease) infinite; }
+@keyframes hint { 0% { transform: scaleX(0); } 60% { transform: scaleX(1); } 100% { transform: scaleX(1); opacity: 0; } }
+
+.beat--card {
+  width: min(380px, calc(100vw - 40px)); box-sizing: border-box; padding: 28px 28px 24px;
+  border-radius: 22px; background: var(--panel);
+  -webkit-backdrop-filter: blur(24px) saturate(150%); backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgba(230, 241, 245, 0.08);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+}
+.beat--left-low { left: clamp(20px, 6vw, 96px); bottom: clamp(28px, 10vh, 110px); }
+.beat--right-high { right: clamp(20px, 6vw, 96px); top: clamp(90px, 14vh, 150px); }
+.title { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -.03em; line-height: 1.05; }
+.text { margin: 12px 0 0; font-size: 15px; line-height: 1.55; color: #C3D1DB; }
+.stat { margin: 22px 0 0; display: flex; align-items: baseline; gap: 10px; padding-top: 18px; border-top: 1px solid var(--line); }
+.stat strong { font-size: 30px; font-weight: 500; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+#live-count { color: var(--live); }
+.cta {
+  margin-top: 20px; display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 18px; border-radius: 999px; background: var(--accent); color: #05090F;
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  transition: transform .15s var(--ease), background-color .2s;
+}
+.cta:hover { background: #7FDEFF; }
+.cta:active { transform: scale(.97); }
+
+.credits { position: fixed; right: 18px; bottom: 12px; z-index: 5; font-size: 11px; color: rgba(143, 162, 178, .7); }
+
+@media (max-width: 900px) {
+  .nav { gap: 10px; padding-left: 14px; }
+  .nav__brand span { display: none; }
+  .nav__links a { padding: 8px 10px; }
+  .beat--right-high { right: auto; left: 20px; top: auto; bottom: 28px; }
+  .beat--left-low { bottom: 28px; }
+  .scene__vignette { background: linear-gradient(0deg, rgba(5, 9, 15, 0.75) 0%, rgba(5, 9, 15, 0) 55%); }
+  /* Dikey ekranda uçak ortada kalır: açılış metni üstte, gölge yukarıdan aşağı */
+  .beat--hero { top: 96px; transform: translateY(12px); left: 20px; right: 20px; }
+  .beat--hero.is-on { transform: none; }
+  .lead { margin-top: 20px; }
+  .hint { display: none; }
+  .scene__shade { background: linear-gradient(180deg, rgba(5, 9, 15, 0.92) 0%, rgba(5, 9, 15, 0.7) 45%, rgba(5, 9, 15, 0) 70%); }
+  .credits { display: none; }
+}
+
+/* Hareket azaltma: kaydırma oynatması yok; kartlar sırayla akan normal içerik olur */
+@media (prefers-reduced-motion: reduce) {
+  .story { height: auto; padding: 120px 20px 60px; display: flex; flex-direction: column; gap: 24px; }
+  .beat, .beat--hero, .beat--card { position: relative; inset: auto; transform: none !important; opacity: 1; visibility: visible; transition: none; }
+  .hint { display: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .nav, .beat--card { background: #0C1520; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}

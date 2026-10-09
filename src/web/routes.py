@@ -2,6 +2,7 @@
 model başarı metrikleri sunucuda models/ altındaki rapor dosyalarından okunur."""
 import json
 import logging
+from pathlib import Path
 
 from flask import Blueprint, current_app, render_template
 
@@ -61,8 +62,12 @@ def index():
     svc = current_app.extensions["flight_delay"]
     classes = getattr(svc.classifier, "classes", None)
     airports = [{"iata": a, "name": config.AIRPORT_NAMES.get(a, a)} for a in svc.delay_predictor.airports]
+    n_frames = max((int(p.stem) for p in (Path(web.static_folder) / "seq" / "d").glob("*.webp")), default=0)
+    delay = _read_json(config.DELAY_MODEL_DIR / "metrics.json") or {}
+    n_train = delay.get("n_train")
     return render_template("index.html", active="web.index", metrics=model_summary(),
-                           n_airports=len(airports), airports=airports,
+                           n_airports=len(airports), airports=airports, n_frames=n_frames,
+                           train_flights=(f"{n_train / 1e6:.2f}".replace(".", ",") + " milyon") if n_train else "geçmiş",
                            n_families=len(classes) if classes else None)
 
 
@@ -95,8 +100,15 @@ def gecikme():
                            train_months=month_range_tr(getattr(svc.delay_predictor, "train_period", None)))
 
 
+ARCH_NAMES = {"convnext_tiny": "ConvNeXt-Tiny", "efficientnet_b0": "EfficientNet-B0",
+              "resnet50": "ResNet-50"}
+
+
 @web.get("/tanima")
 def tanima():
+    clf = current_app.extensions["flight_delay"].classifier
     return render_template("tanima.html", active="web.tanima", metrics=model_summary(),
                            max_upload_mb=config.MAX_UPLOAD_MB,
+                           n_classes=len(clf.classes),
+                           arch_name=ARCH_NAMES.get(getattr(clf, "arch", ""), "CNN"),
                            confusable=[" / ".join(g) for g in config.CONFUSABLE_FAMILIES])

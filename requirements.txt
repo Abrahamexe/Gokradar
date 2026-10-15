@@ -5,7 +5,7 @@
 # API ve sunucu
 flask>=3.0
 flask-compress>=1.15     # HTML/CSS/JS/JSON gzip-brotli sıkıştırması
-waitress>=3.0            # üretim WSGI sunucusu (yoksa Flask geliştirme sunucusuna düşülür)
+waitress>=3.0.2            # üretim WSGI sunucusu (yoksa Flask geliştirme sunucusuna düşülür)
 
 # Veritabanı
 sqlalchemy>=2.0

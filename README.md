@@ -10,7 +10,7 @@
 ![PyTorch](https://img.shields.io/badge/PyTorch-ConvNeXt--Tiny-EE4C2C?logo=pytorch&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?logo=postgresql&logoColor=white)
 ![Blender](https://img.shields.io/badge/Blender-Cycles-F5792A?logo=blender&logoColor=white)
-![Lisans](https://img.shields.io/badge/lisans-özel%20(tüm%20hakları%20saklıdır)-lightgrey)
+![Lisans](https://img.shields.io/badge/lisans-kaynağı%20görülebilir%20·%20tüm%20hakları%20saklıdır-lightgrey)
 
 <img src="docs/images/anasayfa.jpg" alt="GÖKRADAR ana sayfa: alacakaranlıkta Boeing 787 ve İstikbal göklerdedir başlığı" width="860">
 
@@ -285,5 +285,7 @@ tools/encode_frames.py    # render karelerini masaüstü/mobil WebP dizisine çe
 - Harita karoları: Stadia Maps, OpenMapTiles, OpenStreetMap katkıcıları (Stadia'nın ücretsiz planı ticari olmayan
   kullanım içindir).
 
-**Lisans:** özel lisans, tüm hakları saklıdır — bkz. [`LICENSE`](LICENSE). Üçüncü taraf bileşenler kendi
-lisanslarına tabidir.
+**Lisans:** kaynağı görülebilir (source-available), açık kaynak lisanslı **değildir**; tüm hakları saklıdır.
+Kod, arayüz ve görsel tasarım, görseller, metinler ve "GÖKRADAR" adı Abrahamexe'ye aittir. Yazılı izin olmadan
+kullanılamaz, kopyalanamaz, değiştirilemez, dağıtılamaz, taklit edilemez ve yapay zekâ eğitiminde kullanılamaz.
+Ayrıntılar: [`LICENSE`](LICENSE). Üçüncü taraf bileşenler kendi lisanslarına tabidir.

@@ -1,32 +1,121 @@
+GÖKRADAR — Source-Available, All Rights Reserved License
 Copyright (c) 2026 Abrahamexe. All rights reserved.
 
-PROPRIETARY LICENSE / ÖZEL LİSANS
+This repository is SOURCE-AVAILABLE, NOT open source. The source code is
+published only so that it can be read. Publishing it does not grant any
+license, express or implied.
 
-This repository and its contents (source code, configuration, documentation and
-original assets, together the "Software") are the exclusive property of the
-copyright holder. The Software is made visible for viewing purposes only.
+1. COVERED MATERIAL
 
-No permission is granted to use, copy, modify, merge, publish, distribute,
-sublicense, host, deploy as a service, or sell the Software or any part of it,
-in source or binary form, for any purpose (commercial or non-commercial),
-without the prior written permission of the copyright holder.
+   This license covers everything in this repository that is not listed as a
+   third-party component in section 5, together the "Work". This includes:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT
-HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM THE
-SOFTWARE OR ITS USE.
+   a) all source code, scripts, configuration and build files;
+   b) the user interface and visual design: page layouts, components, color
+      palettes, typography choices, iconography, styles (CSS), animations,
+      interaction patterns and the overall look and feel;
+   c) rendered images, image sequences, screenshots, illustrations, the
+      favicon and all other original visual assets, including the frames
+      rendered from the 3D scene (subject to section 5 for the model itself);
+   d) documentation, texts and wording in the application and in this
+      repository;
+   e) the model architecture choices, training pipeline, feature design and
+      any model weights or metrics derived from them;
+   f) the name "GÖKRADAR" and any associated logo or branding.
 
-Third-party components (libraries, the 3D aircraft model, datasets, map tiles,
-fonts, external data services) are NOT covered by this license and remain under
-their own licenses and terms; see README.md ("Veri kaynakları, atıflar ve
-lisans").
+2. WHAT IS NOT PERMITTED
+
+   Without the prior written permission of the copyright holder, you may NOT,
+   in whole or in part, for any purpose, commercial or non-commercial:
+
+   a) use, run, install, host or deploy the Work, or offer it as a service;
+   b) copy, reproduce, modify, adapt, translate or create derivative works;
+   c) copy or imitate the visual design, layouts, styles or assets in another
+      product, website or application;
+   d) publish, distribute, sublicense, sell, rent or otherwise make the Work
+      available to others;
+   e) use the Work, or any part of it, to train, fine-tune or evaluate machine
+      learning or artificial intelligence models, or include it in datasets;
+   f) use the name "GÖKRADAR" or its branding for any product or service.
+
+3. WHAT IS PERMITTED
+
+   a) Viewing and reading the Work on GitHub.
+   b) The limited rights that GitHub's Terms of Service grant to GitHub users
+      for public repositories (viewing and forking within GitHub). A fork is a
+      copy for viewing only; it does not grant any of the rights in section 2.
+   c) Short quotations of the source code for commentary, criticism or
+      review, with clear attribution and a link to this repository, as allowed
+      by applicable law.
+
+4. PERMISSION REQUESTS
+
+   Any other use requires a separate written permission from the copyright
+   holder. Contact: https://github.com/Abrahamexe
+
+5. THIRD-PARTY COMPONENTS
+
+   Third-party components (libraries, the 3D aircraft model "Boeing 787-8" by
+   rocket0314 under CC BY 4.0, datasets, map tiles, fonts and external data
+   services) are NOT covered by this license and remain under their own
+   licenses and terms. See README.md ("Veri kaynakları, atıflar ve lisans").
+
+6. NO WARRANTY
+
+   THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
+   FROM THE WORK OR ITS USE.
+
+7. TERMINATION
+
+   Any use outside section 3 is unauthorized and infringes the copyright
+   holder's rights. The copyright holder may enforce these rights at any time.
 
 ----------------------------------------------------------------------------
 
-Bu depo ve içeriği (kaynak kod, yapılandırma, belgeler ve özgün varlıklar)
-telif hakkı sahibine aittir ve yalnızca görüntüleme amacıyla görünür kılınmıştır.
-Telif hakkı sahibinin önceden yazılı izni olmadan kullanılamaz, kopyalanamaz,
-değiştirilemez, dağıtılamaz, bir hizmet olarak yayınlanamaz veya satılamaz.
-Üçüncü taraf bileşenler (kütüphaneler, 3B uçak modeli, veri setleri, harita
-karoları vb.) bu lisansın kapsamında değildir; kendi lisanslarına tabidir.
+GÖKRADAR — Kaynağı Görülebilir, Tüm Hakları Saklıdır Lisansı
+Telif hakkı (c) 2026 Abrahamexe. Tüm hakları saklıdır.
+
+Bu depo KAYNAĞI GÖRÜLEBİLİR (source-available) bir projedir, açık kaynak
+lisanslı DEĞİLDİR. Kaynak kod yalnızca okunabilmesi için yayımlanmıştır.
+Yayımlanmış olması, açık ya da örtülü hiçbir kullanım izni vermez.
+
+1. KAPSAM: Bu depodaki, 5. maddede sayılan üçüncü taraf bileşenler dışındaki
+   her şey: kaynak kod ve yapılandırma; arayüz ve görsel tasarım (sayfa
+   düzenleri, bileşenler, renk paletleri, yazı tipi seçimleri, ikonlar, CSS,
+   animasyonlar, etkileşimler, genel görünüm); render kareleri, ekran
+   görüntüleri, favicon ve tüm özgün görseller; belgeler ve metinler; model
+   mimarisi, eğitim süreci, öznitelik tasarımı ve bunlardan türeyen model
+   ağırlıkları; "GÖKRADAR" adı ve markası.
+
+2. YASAK OLANLAR: Telif hakkı sahibinin önceden yazılı izni olmadan, ticari
+   olsun olmasın hiçbir amaçla, tamamen ya da kısmen: kullanmak, çalıştırmak,
+   kurmak, barındırmak veya hizmet olarak sunmak; kopyalamak, değiştirmek,
+   uyarlamak veya türev eser oluşturmak; görsel tasarımı, düzenleri, stilleri
+   veya görselleri başka bir üründe, sitede veya uygulamada kopyalamak ya da
+   taklit etmek; yayımlamak, dağıtmak, alt lisanslamak, satmak veya
+   kiralamak; yapay zekâ / makine öğrenmesi modellerini eğitmek ya da veri
+   setlerine katmak; "GÖKRADAR" adını veya markasını kullanmak yasaktır.
+
+3. İZİN VERİLENLER: Eseri GitHub üzerinde görüntülemek ve okumak; GitHub
+   Kullanım Koşulları'nın herkese açık depolar için tanıdığı sınırlı haklar
+   (GitHub içinde görüntüleme ve fork). Fork yalnızca görüntüleme amaçlı bir
+   kopyadır ve 2. maddedeki hiçbir hakkı vermez. Yasaların izin verdiği
+   ölçüde, eleştiri veya inceleme amacıyla kaynak gösterilerek kısa alıntı.
+
+4. İZİN TALEBİ: Diğer her kullanım için telif hakkı sahibinden ayrıca yazılı
+   izin alınmalıdır: https://github.com/Abrahamexe
+
+5. ÜÇÜNCÜ TARAF BİLEŞENLER: Kütüphaneler, 3B uçak modeli (rocket0314,
+   CC BY 4.0), veri setleri, harita karoları, yazı tipleri ve dış veri
+   servisleri bu lisansın kapsamında değildir; kendi lisanslarına tabidir.
+
+6. GARANTİ YOKTUR: Eser "olduğu gibi" sunulur; hiçbir garanti verilmez ve
+   telif hakkı sahibi kullanımdan doğan hiçbir zarardan sorumlu değildir.
+
+7. 3. madde dışındaki her kullanım izinsizdir ve telif hakkı sahibinin
+   haklarını ihlal eder.
+
+İngilizce ve Türkçe metinler arasında çelişki olursa İngilizce metin esas alınır.

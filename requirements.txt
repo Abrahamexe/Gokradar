@@ -24,7 +24,7 @@ matplotlib>=3.8
 
 # Fotoğraf sınıflandırma
 torch>=2.6
-torchvision>=0.21
+torchvision>=0.29.1
 pillow>=10.3
 
 # Yardımcılar

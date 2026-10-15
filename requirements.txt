@@ -3,7 +3,7 @@
 # --extra-index-url https://download.pytorch.org/whl/cu130
 
 # API ve sunucu
-flask>=3.0
+flask>=3.1.3
 flask-compress>=1.15     # HTML/CSS/JS/JSON gzip-brotli sıkıştırması
 waitress>=3.0            # üretim WSGI sunucusu (yoksa Flask geliştirme sunucusuna düşülür)
 

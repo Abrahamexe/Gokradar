@@ -38,9 +38,6 @@ AIRPORT_TZ = {
     "SEA": "America/Los_Angeles",
 }
 
-# Gecikme eşiği (dakika) — BTS DEP_DEL15 tanımıyla uyumlu
-DELAY_THRESHOLD_MIN = 15
-
 # --- Gecikme modeli ---
 DELAY_TEST_DAYS = 14       # verinin son N günü test seti
 DELAY_VAL_DAYS = 7         # testten önceki N gün: erken durdurma ve eşik seçimi

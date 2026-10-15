@@ -278,7 +278,8 @@ tools/encode_frames.py    # render karelerini masaüstü/mobil WebP dizisine çe
 - Fotoğraf modeli FGVC-Aircraft (yalnızca araştırma/ticari olmayan kullanım) ve Wikimedia Commons fotoğraflarıyla
   (CC BY / CC BY-SA; yazar ve lisans bilgisi `data/raw/commons/manifest.csv` içinde) eğitilir. Veriler bu depoda
   dağıtılmaz.
-- Ana sayfadaki 3B model: “Boeing 787-8”, rocket0314 (Sketchfab), CC BY 4.0; render kareleri bu modelden
+- Ana sayfadaki 3B model: [“Boeing 787-8”](https://sketchfab.com/3d-models/boeing-787-8-22a06131abdf4158a81f9ad2ddfde5b9),
+  [rocket0314](https://sketchfab.com/rocket0314) (Sketchfab), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); render kareleri bu modelden
   Blender Cycles ile üretildi. Gökyüzü ışığı: “Qwantani Dusk 2 (Pure Sky)”, Poly Haven, CC0.
 - Harita karoları: Stadia Maps, OpenMapTiles, OpenStreetMap katkıcıları (Stadia'nın ücretsiz planı ticari olmayan
   kullanım içindir).

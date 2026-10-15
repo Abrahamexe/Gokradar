@@ -17,7 +17,6 @@ import os
 import sys
 
 import bpy
-import mathutils
 from mathutils import Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))

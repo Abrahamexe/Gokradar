@@ -41,7 +41,6 @@ API_URL = "https://commons.wikimedia.org/w/api.php"
 USER_AGENT = "GOKRADAR-dataset/1.0 (aircraft recognition training; https://github.com/Abrahamexe)"
 IMAGES_DIR = config.COMMONS_DIR / "images"
 MANIFEST_PATH = config.COMMONS_DIR / "manifest.csv"
-CATEGORY_CACHE = config.COMMONS_DIR / "category_files.parquet"
 
 # Etiket → kök kategoriler. Etiket FGVC'deki bir aileyle aynıysa o aileye örnek eklenir.
 # (kök kategoriler, sınıf başına hedef görüntü sayısı)

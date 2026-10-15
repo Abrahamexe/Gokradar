@@ -2,6 +2,7 @@
 import gzip
 import logging
 import re
+import time
 import uuid
 from datetime import date
 
@@ -63,6 +64,7 @@ def airports():
 # --- canlı uçuşlar ---
 
 @bp.get("/flights/live")
+@rate_limited("live", config.RATE_LIMITS_PER_MIN["live"])   # OpenSky günlük kredisi korunur
 def flights_live():
     svc = services()
     if svc.opensky is None:
@@ -125,6 +127,7 @@ def flights_world():
 
 
 @bp.get("/flights/<icao24>/detail")
+@rate_limited("detail", config.RATE_LIMITS_PER_MIN["detail"])
 def flight_detail(icao24: str):
     """Seçili uçağın ayrıntısı: canlı kayıt (adsb.lol) + uçak veritabanı (operatör, model)."""
     code = parse_icao24(icao24)
@@ -346,6 +349,17 @@ def _read_image(file) -> tuple[Image.Image, str]:
     return img, name
 
 
+def _prune_uploads(upload_dir) -> None:
+    """Saklama süresi dolan yüklemeleri siler; hata yüklemeyi engellemez."""
+    cutoff = time.time() - config.UPLOAD_RETENTION_HOURS * 3600
+    for path in upload_dir.iterdir():
+        try:
+            if path.is_file() and path.name != ".gitkeep" and path.stat().st_mtime < cutoff:
+                path.unlink()
+        except OSError as exc:
+            log.warning("Eski yükleme silinemedi (%s): %s", path.name, exc)
+
+
 @bp.post("/classify-aircraft")
 @rate_limited("classify", config.RATE_LIMITS_PER_MIN["classify"])
 def classify_aircraft():
@@ -359,6 +373,7 @@ def classify_aircraft():
     stored = f"{uuid.uuid4().hex}_{name}"
     file.stream.seek(0)
     file.save(svc.upload_dir / stored)
+    _prune_uploads(svc.upload_dir)
 
     with svc.classifier_lock:  # GPU modeline eşzamanlı erişimi sırala
         probs = svc.classifier.probabilities(img)

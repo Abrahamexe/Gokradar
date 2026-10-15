@@ -243,7 +243,8 @@ Hatalar her zaman `{"error": {"code": "...", "message": "..."}}` biçimindedir.
   diğer görseller bir gün önbelleğe alınır.
 - **Dış servisler:** Google Fonts, unpkg (Leaflet, SRI ile), Stadia Maps ve Planespotters.net ziyaretçinin
   IP adresini ilgili servislerle paylaşır.
-- Yüklenen fotoğraflar `data/uploads/` altında saklanır; kişisel veri içerebileceğinden düzenli temizleyin.
+- Yüklenen fotoğraflar `data/uploads/` altında en fazla `config.UPLOAD_RETENTION_HOURS` (24 saat) tutulur,
+  sonra yeni bir yüklemede otomatik silinir.
 
 ### Siteyi yayına alırken
 
